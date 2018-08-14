@@ -8,7 +8,7 @@ extern "C" {\
 		if (action == N(onerror)) {\
 			eosio_assert(code == N(eosio), "onerror action's are only valid from the \"eosio\" system account");\
 		}\
-		if (code == self || action == N(onerror) || code == N(eosio.token) ) {\
+		if (code == self || action == N(onerror) || code == N(eosio.token)) {\
 			TYPE thiscontract(self);\
 			switch (action) {\
 				EOSIO_API(TYPE, MEMBERS)\
@@ -17,48 +17,45 @@ extern "C" {\
 	}\
 }
 
-void crowdsale::regcrowdsale(account_name issuer, account_name token_contract, eosio::asset asset) {
-	require_auth(issuer);
-	crowdsale_index crowdsales(this->_self, token_contract);
-	eosio_assert(crowdsales.find(asset.symbol.name()) == crowdsales.end(), "Crowdsale for this contract and symbol already exists");
-	crowdsales.emplace(this->_self, [&](auto& crowdsale) {
-		crowdsale.issuer = issuer;
-		crowdsale.token_contract = token_contract;
-		crowdsale.symbol = asset.symbol;
-	});
+crowdsale::crowdsale(account_name self) :
+	eosio::contract(self),
+	asset(
+		eosio::asset(0, eosio::string_to_symbol(PRECISION, STR(SYMBOL))),
+		eosio::string_to_name(STR(CONTRACT))
+	),
+	state_singleton(_self, _self)
+{
+	this->state = state_singleton.exists() ? state_singleton.get() : default_parameters();
 }
 
-void crowdsale::selcrowdsale(account_name user, account_name token_contract, eosio::asset asset) {
-	require_auth(user);
-	crowdsale_index crowdsales(this->_self, token_contract);
-	eosio_assert(crowdsales.find(asset.symbol.name()) != crowdsales.end(), "User selected invalid crowdsale");
-	user_choice_index user_choices(this->_self, this->_self);
-	auto user_choice = user_choices.find(user);
-	if (user_choice == user_choices.end()) {
-		user_choices.emplace(user, [&](auto& choice) {
-			choice.user = user;
-			choice.token_contract = token_contract;
-			choice.symbol = asset.symbol;
-		});
-	} else {
-		user_choices.modify(user_choice, user, [&](auto& choice) {
-			choice.user = user;
-			choice.token_contract = token_contract;
-			choice.symbol = asset.symbol;
-		});
-	}
+crowdsale::~crowdsale() {
+	this->state_singleton.set(this->state, _self);
 }
 
-void crowdsale::transfer(account_name sender, account_name receiver) {
+void crowdsale::transfer(uint64_t sender, uint64_t receiver) {
 	if (receiver != _self) {
 		return;
 	}
-	user_choice_index user_choices(this->_self, this->_self);
-	auto user_choice = user_choices.find(sender);
-	eosio_assert(user_choice != user_choices.end(), "User did't choose crowdsale");
-	crowdsale_index crowdsales(this->_self, user_choice->token_contract);
-	auto crowdsale = crowdsales.find(user_choice->symbol);
-	eosio::currency::inline_transfer(this->_self, sender, eosio::extended_asset(eosio::asset(1, crowdsale->symbol), crowdsale->token_contract), "airdrop");
+	eosio_assert(!this->state.finalized, "Crowdsale finished");
+	transfer_t data = eosio::unpack_action_data<transfer_t>();
+	this->asset.set_amount(data.quantity.amount * this->state.multiplier.num / this->state.multiplier.denom);
+	eosio::currency::inline_transfer(
+		this->_self,
+		data.from,
+		this->asset,
+		"crowdsale"
+	);
 }
 
-EOSIO_ABI(crowdsale, (regcrowdsale)(selcrowdsale)(transfer));
+void crowdsale::finalize() {
+	require_auth(_self);
+	this->state.finalized = true;
+}
+
+// debug
+void crowdsale::unfinalize() {
+	require_auth(_self);
+	this->state.finalized = false;
+}
+
+EOSIO_ABI(crowdsale, (finalize)(unfinalize)(transfer));

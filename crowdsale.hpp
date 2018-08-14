@@ -3,34 +3,52 @@
 #include <eosiolib/currency.hpp>
 #include <eosiolib/vector.hpp>
 #include <eosiolib/eosio.hpp>
+#include <eosiolib/singleton.hpp>
 
 #include <string>
 
+#include "config.h"
+
+#define STR_EXPAND(C) #C
+#define STR(C) STR_EXPAND(C)
+
 class crowdsale : public eosio::contract {
 private:
-	struct userchoice_t {
-		account_name user;
-		account_name token_contract;
-		eosio::symbol_type symbol;
-        uint64_t primary_key() const { return user; }
+	struct transfer_t {
+		account_name from;
+		account_name to;
+		eosio::asset quantity;
+		eosio::string memo;
 	};
 
-	struct crowdsale_t {
-		account_name issuer;
-		account_name token_contract;
-		eosio::symbol_type symbol;
-        uint64_t primary_key() const { return symbol.name(); }
+	struct multiplier_t {
+		int num;
+		int denom;
 	};
 
-	typedef eosio::multi_index<N(userchoice_t), userchoice_t> user_choice_index;
-	typedef eosio::multi_index<N(crowdsale_t), crowdsale_t> crowdsale_index;
+	struct state_t {
+		bool finalized;
+		multiplier_t multiplier;
+	};
+
+	eosio::extended_asset asset;
+	eosio::singleton<N(state), state_t> state_singleton;
+	state_t state;
+
+	state_t default_parameters() {
+		return state_t{
+			.finalized = false,
+			.multiplier = multiplier_t{
+				.num = 3,
+				.denom = 2
+			}
+		};
+	}
 
 public:
-	crowdsale(account_name self) :
-		eosio::contract(self)
-	{}
-
-	void regcrowdsale(account_name issuer, account_name token_contract, eosio::asset asset);
-	void selcrowdsale(account_name user, account_name token_contract, eosio::asset asset);
-	void transfer(account_name from, account_name to);
+	crowdsale(account_name self);
+	~crowdsale();
+	void transfer(uint64_t sender, uint64_t receiver);
+	void finalize();
+	void unfinalize();
 };
