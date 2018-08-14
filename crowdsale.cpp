@@ -19,6 +19,10 @@ crowdsale::~crowdsale() {
 
 void crowdsale::on_deposit(account_name investor, eosio::asset quantity) {
 	eosio_assert(!this->state.finalized, "Crowdsale finished");
+	if (this->state.whitelist) {
+		auto it = this->whitelist.find(investor);
+		eosio_assert(it != this->whitelist.end(), "Account not whitelisted");
+	}
 	this->asset.set_amount(quantity.amount * this->state.multiplier.num / this->state.multiplier.denom);
 	eosio::currency::inline_transfer(
 		this->_self,
