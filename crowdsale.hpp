@@ -21,15 +21,12 @@ private:
 
 	struct state_t {
 		bool finalized;
-		bool whitelist;
-		multiplier_t multiplier;
-		uint32_t min_contrib;
-		uint32_t max_contrib;
 	} state;
 
 	struct deposit_t {
 		account_name account;
 		int64_t amount;
+		int64_t tokens;
 		uint64_t primary_key() const { return account; }
 	};
 
@@ -45,14 +42,7 @@ private:
 
 	state_t default_parameters() {
 		return state_t{
-			.finalized = false,
-			.whitelist = WHITELIST,
-			.multiplier = multiplier_t{
-				.num = MULTIPLIER_NUM,
-				.denom = MULTIPLIER_DENOM
-			},
-			.min_contrib = MIN_CONTRIB,
-			.max_contrib = MAX_CONTRIB
+			.finalized = false
 		};
 	}
 
@@ -63,7 +53,6 @@ public:
 	void on_deposit(account_name investor, eosio::asset quantity);
 	void white(account_name account);
 	void unwhite(account_name account);
-	void setwhite(bool value); // TODO: remove
 	void finalize();
 	void setfinalize(bool value); // TODO: remove
 };
