@@ -8,6 +8,7 @@ crowdsale::crowdsale(account_name self) :
 		eosio::string_to_name(STR(CONTRACT))
 	),
 	state_singleton(this->_self, this->_self),
+	deposits(this->_self, this->_self),
 	whitelist(this->_self, this->_self)
 {
 	this->state = state_singleton.exists() ? state_singleton.get() : default_parameters();
@@ -23,13 +24,26 @@ void crowdsale::on_deposit(account_name investor, eosio::asset quantity) {
 		auto it = this->whitelist.find(investor);
 		eosio_assert(it != this->whitelist.end(), "Account not whitelisted");
 	}
+	auto it = this->deposits.find(investor);
+	int64_t entire_deposit = quantity.amount;
+	if (it != this->deposits.end()) {
+		entire_deposit += it->amount;
+	}
+	eosio_assert(entire_deposit >= this->state.min_contrib, "Contribution too low");
+	eosio_assert(entire_deposit <= this->state.max_contrib, "Contribution too high");
+	if (it == this->deposits.end()) {
+		this->deposits.emplace(investor, [investor, entire_deposit](auto& deposit) {
+			deposit.account = investor;
+			deposit.amount = entire_deposit;
+		});
+	} else {
+		this->deposits.modify(it, investor, [investor, entire_deposit](auto& deposit) {
+			deposit.account = investor;
+			deposit.amount = entire_deposit;
+		});
+	}
 	this->asset.set_amount(quantity.amount * this->state.multiplier.num / this->state.multiplier.denom);
-	eosio::currency::inline_transfer(
-		this->_self,
-		investor,
-		this->asset,
-		"crowdsale"
-	);
+	eosio::currency::inline_transfer(this->_self, investor, this->asset, "crowdsale");
 }
 
 void crowdsale::transfer(uint64_t sender, uint64_t receiver) {

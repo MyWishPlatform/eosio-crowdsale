@@ -15,15 +15,23 @@
 class crowdsale : public eosio::contract {
 private:
 	struct multiplier_t {
-		int num;
-		int denom;
+		uint32_t num;
+		uint32_t denom;
 	};
 
 	struct state_t {
 		bool finalized;
 		bool whitelist;
 		multiplier_t multiplier;
+		uint32_t min_contrib;
+		uint32_t max_contrib;
 	} state;
+
+	struct deposit_t {
+		account_name account;
+		int64_t amount;
+        uint64_t primary_key() const { return account; }
+	};
 
 	struct whitelist_t {
 		account_name account;
@@ -32,6 +40,7 @@ private:
 
 	eosio::extended_asset asset;
 	eosio::singleton<N(state), state_t> state_singleton;
+	eosio::multi_index<N(deposit), deposit_t> deposits;
 	eosio::multi_index<N(whitelist), whitelist_t> whitelist;
 
 	state_t default_parameters() {
@@ -41,7 +50,9 @@ private:
 			.multiplier = multiplier_t{
 				.num = MULTIPLIER_NUM,
 				.denom = MULTIPLIER_DENOM
-			}
+			},
+			.min_contrib = MIN_CONTRIB,
+			.max_contrib = MAX_CONTRIB
 		};
 	}
 
