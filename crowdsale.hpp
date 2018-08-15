@@ -30,12 +30,12 @@ private:
 	struct deposit_t {
 		account_name account;
 		int64_t amount;
-        uint64_t primary_key() const { return account; }
+		uint64_t primary_key() const { return account; }
 	};
 
 	struct whitelist_t {
 		account_name account;
-        uint64_t primary_key() const { return account; }
+		uint64_t primary_key() const { return account; }
 	};
 
 	eosio::extended_asset asset;
