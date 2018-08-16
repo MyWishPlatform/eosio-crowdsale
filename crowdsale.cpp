@@ -31,6 +31,7 @@ void crowdsale::transfer(uint64_t sender, uint64_t receiver) {
 }
 
 void crowdsale::on_deposit(account_name investor, eosio::asset quantity) {
+	eosio_assert(time() >= START_DATE, "Crowdsale hasn't started");
 	eosio_assert(!this->state.finalized, "Crowdsale finished");
 	if (WHITELIST) {
 		auto it = this->whitelist.find(investor);
@@ -82,6 +83,7 @@ void crowdsale::unwhite(account_name account) {
 }
 
 void crowdsale::finalize() {
+	eosio_assert(time() > FINISH_DATE, "Crowdsale hasn't finished");
 	eosio_assert(!this->state.finalized, "Crowdsale already finalized");
 	bool success = this->state.total_deposit >= SOFT_CAP;
 	eosio::extended_asset asset(
