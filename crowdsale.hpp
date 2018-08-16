@@ -21,6 +21,7 @@ private:
 
 	struct state_t {
 		bool finalized;
+		int64_t total_deposit;
 	} state;
 
 	struct deposit_t {

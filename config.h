@@ -9,3 +9,6 @@
 
 #define MIN_CONTRIB   1000 // 0.1 EOS
 #define MAX_CONTRIB 100000 // 10 EOS
+
+#define SOFT_CAP  1000000 // 100 EOS
+#define HARD_CAP 10000000 // 1000 EOS
