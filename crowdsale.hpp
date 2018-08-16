@@ -22,6 +22,8 @@ private:
 	struct state_t {
 		bool finalized;
 		int64_t total_deposit;
+		time_t start;
+		time_t finish;
 	} state;
 
 	struct deposit_t {
@@ -44,7 +46,9 @@ private:
 	state_t default_parameters() {
 		return state_t{
 			.finalized = false,
-			.total_deposit = 0
+			.total_deposit = 0,
+			.start = START_DATE,
+			.finish = FINISH_DATE
 		};
 	}
 
@@ -57,4 +61,5 @@ public:
 	void unwhite(account_name account);
 	void finalize();
 	void setfinalize(bool value); // TODO: remove
+	void init(); // TODO: remove
 };
