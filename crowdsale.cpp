@@ -1,6 +1,5 @@
 #include "crowdsale.hpp"
 #include "override.h"
-#include <eosiolib/print.hpp>
 
 crowdsale::crowdsale(account_name self) :
 	eosio::contract(self),

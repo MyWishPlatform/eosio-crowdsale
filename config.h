@@ -1,5 +1,5 @@
 #define CONTRACT mywishtoken1
-#define SYMBOL WISHS
+#define SYMBOL WISH
 #define PRECISION 8
 
 #define WHITELIST true
