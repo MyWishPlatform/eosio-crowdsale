@@ -43,7 +43,8 @@ private:
 
 	state_t default_parameters() {
 		return state_t{
-			.finalized = false
+			.finalized = false,
+			.total_deposit = 0
 		};
 	}
 
