@@ -9,9 +9,6 @@
 
 #include "config.h"
 
-#define STR_EXPAND(C) #C
-#define STR(C) STR_EXPAND(C)
-
 class crowdsale : public eosio::contract {
 private:
 	struct multiplier_t {
@@ -22,9 +19,10 @@ private:
 	struct state_t {
 		bool finalized;
 		int64_t total_deposit;
+		int64_t total_tokens;
 		time_t start;
 		time_t finish;
-	} state;
+	};
 
 	struct deposit_t {
 		account_name account;
@@ -38,19 +36,26 @@ private:
 		uint64_t primary_key() const { return account; }
 	};
 
-	eosio::extended_asset asset;
 	eosio::singleton<N(state), state_t> state_singleton;
 	eosio::multi_index<N(deposit), deposit_t> deposits;
 	eosio::multi_index<N(whitelist), whitelist_t> whitelist;
+
+	state_t state;
+
+	eosio::extended_asset asset_eos;
+	eosio::extended_asset asset_tkn;
 
 	state_t default_parameters() {
 		return state_t{
 			.finalized = false,
 			.total_deposit = 0,
+			.total_tokens = 0,
 			.start = START_DATE,
 			.finish = FINISH_DATE
 		};
 	}
+
+	void send_funds(account_name target, eosio::extended_asset asset);
 
 public:
 	crowdsale(account_name self);

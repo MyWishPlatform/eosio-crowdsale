@@ -1,14 +1,24 @@
 #include "crowdsale.hpp"
 #include "override.h"
 
+#define STR_EXPAND(C) #C
+#define STR(C) STR_EXPAND(C)
+
 crowdsale::crowdsale(account_name self) :
 	eosio::contract(self),
 	state_singleton(this->_self, this->_self),
 	deposits(this->_self, this->_self),
-	whitelist(this->_self, this->_self)
-{
-	this->state = state_singleton.exists() ? state_singleton.get() : default_parameters();
-}
+	whitelist(this->_self, this->_self),
+	asset_eos(
+		eosio::asset(0, eosio::string_to_symbol(4, "EOS")),
+		eosio::string_to_name("eosio.token")
+	),
+	asset_tkn(
+		eosio::asset(0, eosio::string_to_symbol(PRECISION, STR(SYMBOL))),
+		eosio::string_to_name(STR(CONTRACT))
+	),
+	state(state_singleton.exists() ? state_singleton.get() : default_parameters())
+{}
 
 crowdsale::~crowdsale() {
 	this->state_singleton.set(this->state, this->_self);
@@ -16,6 +26,10 @@ crowdsale::~crowdsale() {
 
 void crowdsale::init() {
 	this->state = default_parameters();
+}
+
+void crowdsale::send_funds(account_name target, eosio::extended_asset asset) {
+	eosio::currency::inline_transfer(this->_self, target, asset, "crowdsale");
 }
 
 void crowdsale::transfer(uint64_t sender, uint64_t receiver) {
@@ -42,8 +56,9 @@ void crowdsale::on_deposit(account_name investor, eosio::asset quantity) {
 		eosio_assert(it != this->whitelist.end(), "Account not whitelisted");
 	}
 	auto it = this->deposits.find(investor);
+	int64_t tokens_to_give = quantity.amount * MULTIPLIER_NUM / MULTIPLIER_DENOM;
 	int64_t entire_deposit = quantity.amount;
-	int64_t entire_tokens = quantity.amount * MULTIPLIER_NUM / MULTIPLIER_DENOM;
+	int64_t entire_tokens = tokens_to_give;
 	if (it != this->deposits.end()) {
 		entire_deposit += it->amount;
 		entire_tokens += it->tokens;
@@ -51,8 +66,11 @@ void crowdsale::on_deposit(account_name investor, eosio::asset quantity) {
 	eosio_assert(entire_deposit >= MIN_CONTRIB, "Contribution too low");
 	eosio_assert(entire_deposit <= MAX_CONTRIB, "Contribution too high");
 	int64_t new_total_deposit = this->state.total_deposit + quantity.amount;
-	eosio_assert(new_total_deposit <= HARD_CAP, "Hard cap reached");
+	int64_t new_total_tokens = this->state.total_tokens + tokens_to_give;
+	eosio_assert(new_total_deposit <= HARD_CAP_EOS, "EOS hard cap reached");
+	eosio_assert(new_total_tokens <= HARD_CAP_TKN, "Token hard cap reached");
 	this->state.total_deposit = new_total_deposit;
+	this->state.total_tokens = new_total_tokens;
 	if (it == this->deposits.end()) {
 		this->deposits.emplace(investor, [investor, entire_deposit, entire_tokens](auto& deposit) {
 			deposit.account = investor;
@@ -65,6 +83,10 @@ void crowdsale::on_deposit(account_name investor, eosio::asset quantity) {
 			deposit.amount = entire_deposit;
 			deposit.tokens = entire_tokens;
 		});
+	}
+	if (TRANSFERABLE) {
+		this->asset_tkn.set_amount(tokens_to_give);
+		send_funds(investor, this->asset_tkn);
 	}
 }
 
@@ -89,23 +111,15 @@ void crowdsale::unwhite(account_name account) {
 void crowdsale::finalize() {
 	eosio_assert(now() > this->state.finish, "Crowdsale hasn't finished");
 	eosio_assert(!this->state.finalized, "Crowdsale already finalized");
-	bool success = this->state.total_deposit >= SOFT_CAP;
-	eosio::extended_asset asset(
-		eosio::asset(0, eosio::string_to_symbol(success ? PRECISION : 4, success ? STR(SYMBOL) : "EOS")),
-		eosio::string_to_name(success ? STR(CONTRACT) : "eosio.token")
-	);
-	auto send_funds = [this, asset](account_name account) {
-		eosio::currency::inline_transfer(this->_self, account, asset, "crowdsale");
-	};
-	if (success) {
+	bool success = this->state.total_deposit >= SOFT_CAP_EOS && this->state.total_tokens >= SOFT_CAP_TKN;
+	if (!TRANSFERABLE || !success) {
+		size_t offset_eos = offsetof(deposit_t, amount);
+		size_t offset_tkn = offsetof(deposit_t, tokens);
+		size_t offset = success ? offset_tkn : offset_eos;
+		eosio::extended_asset& asset = success ? this->asset_tkn : this->asset_eos;
 		for (auto it = this->deposits.begin(); it != this->deposits.end(); it++) {
-			asset.set_amount(it->tokens);
-			send_funds(it->account);
-		}
-	} else {
-		for (auto it = this->deposits.begin(); it != this->deposits.end(); it++) {
-			asset.set_amount(it->amount);
-			send_funds(it->account);
+			asset.set_amount(*static_cast<const int64_t*>(static_cast<const void*>(static_cast<const char*>(static_cast<const void*>(&(*it))) + offset)));
+			send_funds(it->account, asset);
 		}
 	}
 	this->state.finalized = true;
