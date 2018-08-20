@@ -1,5 +1,5 @@
 #define ISSUER mywishio // ТОТ КТО ПОКУПАЕТ У НАС КРАУДСЕЙЛ
-#define TOKEN WISH // СИМВОЛ ТОКЕНА
+#define SYMBOL WISH // СИМВОЛ ТОКЕНА
 #define DECIMALS 8 // СКОЛЬКО ЗНАКОВ У ТОКЕНА ПОСЛЕ ЗАПЯТОЙ
 
 #define WHITELIST true // ВКЛЮЧИТЬ ВАЙТЛИСТ ИЛИ НЕ ВКЛЮЧАТЬ
