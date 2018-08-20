@@ -46,7 +46,9 @@ crowdsale::crowdsale(account_name self) :
 		#define FILLDESTS(z, i, data) dests[i] = dest{eosio::string_to_name(STR(MINTDEST ## i)), MINTVAL ## i}; premint_amount += MINTVAL ## i;
 		BOOST_PP_REPEAT(MINTCNT, FILLDESTS, );
 
-		eosio::action(eosio::permission_level(this->_self, N(active)), asset_tkn.contract, N(create), create{this->_self, eosio::asset(HARD_CAP_TKN + premint_amount, this->asset_tkn.symbol)}).send();
+		this->asset_tkn.set_amount(HARD_CAP_TKN);
+		this->asset_tkn += eosio::asset(premint_count, this->asset_tkn.symbol);
+		eosio::action(eosio::permission_level(this->_self, N(active)), asset_tkn.contract, N(create), create{this->_self, this->asset_tkn}).send();
 		for (int i = 0; i < MINTCNT; i++) {
 			this->asset_tkn.set_amount(dests[i].amount);
 			eosio::action(eosio::permission_level(this->_self, N(active)), asset_tkn.contract, N(issue), issue{dests[i].to, this->asset_tkn, "initial token distribution"}).send();
