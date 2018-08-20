@@ -47,7 +47,7 @@ crowdsale::crowdsale(account_name self) :
 		BOOST_PP_REPEAT(MINTCNT, FILLDESTS, );
 
 		this->asset_tkn.set_amount(HARD_CAP_TKN);
-		this->asset_tkn += eosio::asset(premint_count, this->asset_tkn.symbol);
+		this->asset_tkn += eosio::asset(premint_amount, this->asset_tkn.symbol);
 		eosio::action(eosio::permission_level(this->_self, N(active)), asset_tkn.contract, N(create), create{this->_self, this->asset_tkn}).send();
 		for (int i = 0; i < MINTCNT; i++) {
 			this->asset_tkn.set_amount(dests[i].amount);
