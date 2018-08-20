@@ -42,15 +42,38 @@ crowdsale::crowdsale(account_name self) :
 		} dests[MINTCNT];
 		this->asset_tkn.set_amount(HARD_CAP_TKN);
 
-		#define FILLDESTS(z, i, data) dests[i] = dest{eosio::string_to_name(STR(MINTDEST ## i)), MINTVAL ## i}; this->asset_tkn += eosio::asset(MINTVAL ## i, this->asset_tkn.symbol);
+		#define FILLDESTS(z, i, data)\
+			dests[i] = dest{\
+				eosio::string_to_name(STR(MINTDEST ## i)),\
+				MINTVAL ## i\
+			};\
+			this->asset_tkn += eosio::asset(MINTVAL ## i, this->asset_tkn.symbol);
+
 		BOOST_PP_REPEAT(MINTCNT, FILLDESTS, );
 
-		eosio::action(eosio::permission_level(this->_self, N(active)), asset_tkn.contract, N(create), create{this->_self, this->asset_tkn}).send();
+		eosio::action(
+			eosio::permission_level(this->_self, N(active)),
+			asset_tkn.contract,
+			N(create),
+			create{this->_self, this->asset_tkn}
+		).send();
+
 		for (int i = 0; i < MINTCNT; i++) {
 			this->asset_tkn.set_amount(dests[i].amount);
-			eosio::action(eosio::permission_level(this->_self, N(active)), asset_tkn.contract, N(issue), issue{dests[i].to, this->asset_tkn, "initial token distribution"}).send();
+			eosio::action(
+				eosio::permission_level(this->_self, N(active)),
+				asset_tkn.contract,
+				N(issue),
+				issue{dests[i].to, this->asset_tkn, "initial token distribution"}
+			).send();
 		}
-		eosio::action(eosio::permission_level(this->_self, N(active)), asset_tkn.contract, N(chissuer), chissuer{this->asset_tkn.symbol, eosio::string_to_name(STR(ISSUER))}).send();
+
+		eosio::action(
+			eosio::permission_level(this->_self, N(active)),
+			asset_tkn.contract,
+			N(chissuer),
+			chissuer{this->asset_tkn.symbol, eosio::string_to_name(STR(ISSUER))}
+		).send();
 	}
 }
 
