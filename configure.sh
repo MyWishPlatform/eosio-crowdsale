@@ -104,12 +104,12 @@ while [[ $# -gt 0 ]]; do
 			;;
 
 		--hardcap)
-			harcap=$2
+			hardcap=$2
 			shift 2
 			;;
 
 		--start)
-			srart=$2
+			start=$2
 			shift 2
 			;;
 
