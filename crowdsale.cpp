@@ -35,13 +35,12 @@ crowdsale::crowdsale(account_name self) :
 			eosio::symbol_type symbol;
 			account_name new_issuer;
 		};
+
 		struct dest {
 			account_name to;
 			int64_t amount;
-		};
-
+		} dests[MINTCNT];
 		this->asset_tkn.set_amount(HARD_CAP_TKN);
-		dest dests[MINTCNT];
 
 		#define FILLDESTS(z, i, data) dests[i] = dest{eosio::string_to_name(STR(MINTDEST ## i)), MINTVAL ## i}; this->asset_tkn += eosio::asset(MINTVAL ## i, this->asset_tkn.symbol);
 		BOOST_PP_REPEAT(MINTCNT, FILLDESTS, );
