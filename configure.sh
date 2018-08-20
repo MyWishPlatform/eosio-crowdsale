@@ -14,12 +14,12 @@ ARGUMENT_LIST=(
 	"finish"
 )
 
-whitelist=true			# whitelist on
-transferable=false		# transferable off
-rate=150				# rate 1.5
-ratedenom=100			
-mincontrib=1000			# min contrib 0.1 EOS
-maxcontrib=100000		# max contrib 10 EOS
+whitelist=true      # whitelist on
+transferable=false  # transferable off
+rate=150            # rate 1.5
+ratedenom=100
+mincontrib=1000     # min contrib 0.1 EOS
+maxcontrib=100000   # max contrib 10 EOS
 
 opts=$(getopt \
 	--longoptions "$(printf "%s:," "${ARGUMENT_LIST[@]}")" \
