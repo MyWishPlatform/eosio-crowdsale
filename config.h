@@ -1,19 +1,25 @@
-#define ISSUER mywishio // ТОТ КТО ПОКУПАЕТ У НАС КРАУДСЕЙЛ
-#define SYMBOL WISH // СИМВОЛ ТОКЕНА
-#define DECIMALS 8 // СКОЛЬКО ЗНАКОВ У ТОКЕНА ПОСЛЕ ЗАПЯТОЙ
+#define ISSUER mywishio
+#define SYMBOL WISH
+#define DECIMALS 2
+#define WHITELIST true
+#define TRANSFERABLE false
+#define RATE 150
+#define RATE_DENOM 100
+#define MIN_CONTRIB 1000
+#define MAX_CONTRIB 100000
+#define SOFT_CAP_TKN 1000000000
+#define HARD_CAP_TKN 10000000000
+#define START_DATE 1534780454
+#define FINISH_DATE 1534781454
 
-#define WHITELIST true // ВКЛЮЧИТЬ ВАЙТЛИСТ ИЛИ НЕ ВКЛЮЧАТЬ
-
-#define TRANSFERABLE false // МОЖНО ТРАНСФЕРИТЬ ТОКЕНЫ ВО ВРЕМЯ КРАУДСЕЙЛА ИЛИ НЕЛЬЗЯ
-
-#define RATE 150 // СКОЛЬКО ТОКЕНОВ ПОЛУЧИТ ИНВЕСТОР ЗА 1 ЕОС ЕСЛИ ПОДЕЛИТЬ ЭТО ЧИСЛО НА RATE_PRECISION, В ДАННОМ СЛУЧАЕ 150/100 БУДЕТ 1.5 ТОКЕНА ЗА 1 ЕОС
-#define RATE_PRECISION 100 // ТОЧНОСТЬ РЕЙТА, В ДАННОМ СЛУЧАЕ 100
-
-#define MIN_CONTRIB   1000 // МИНИМАЛЬНОЕ ИНВЕСТИРОВАНИЕ В ЕОСАХ. 0.1 EOS
-#define MAX_CONTRIB 100000 // МАКСИМАЛЬНОЕ ИНВЕСТИРОВАНИЕ В ЕОСАХ. 10 EOS
-
-#define SOFT_CAP_TKN  10000000000 // МИНИМАЛЬНОЕ КОЛИЧЕСТВО ТОКЕНОВ КОТОРЫЕ ДОЛЖНЫ ВЫКУПИТЬ. 100 WISH
-#define HARD_CAP_TKN 100000000000 // МАКСИМАЛЬНОЕ КОЛИЧЕСТВО ТОКЕНОВ КОТОРЫЕ МОГУТ ВЫКУПИТЬ. 1000 WISH
-
-#define START_DATE  1534438020 // КОГДА НАЧИНАЕТСЯ КРАУДСЕЙЛ. 2018 8 16 19 47 00
-#define FINISH_DATE 1534438200 // КОГДА ЗАКАНЧИВАЕТСЯ КРАУДСЕЙЛ. 2018 8 16 19 50 00
+#define MINTCNT 5
+#define MINTDEST0 mywishio
+#define MINTVAL0 10000
+#define MINTDEST1 mywishairdr1
+#define MINTVAL1 5000
+#define MINTDEST2 mywishairdr2
+#define MINTVAL2 2500
+#define MINTDEST3 mywishairdr3
+#define MINTVAL3 1250
+#define MINTDEST4 mywishairdr4
+#define MINTVAL4 625

@@ -4,6 +4,8 @@
 #define STR_EXPAND(C) #C
 #define STR(C) STR_EXPAND(C)
 
+#define CONTRACT mywishtoken5
+
 crowdsale::crowdsale(account_name self) :
 	eosio::contract(self),
 	state_singleton(this->_self, this->_self),
@@ -19,14 +21,38 @@ crowdsale::crowdsale(account_name self) :
 	),
 	state(state_singleton.exists() ? state_singleton.get() : default_parameters())
 {
-	struct create
-	{
-		account_name issuer;
-		eosio::asset maximum_supply;
-	};
-	
-	eosio::action act(eosio::permission_level(this->_self, N(active)), N(mywishtoken5), N(create), create{eosio::string_to_name(STR(ISSUER)), eosio::asset(HARD_CAP_TKN, this->asset_tkn.symbol)});
-	act.send();
+	if (!state_singleton.exists()) {
+		struct create {
+			account_name issuer;
+			eosio::asset maximum_supply;
+		};
+		struct issue {
+			account_name to;
+			eosio::asset quantity;
+			eosio::string memo;
+		};
+		struct chissuer {
+			eosio::symbol_type symbol;
+			account_name new_issuer;
+		};
+		struct dest {
+			account_name to;
+			int64_t amount;
+		};
+
+		int64_t premint_amount = 0;
+		dest dests[MINTCNT];
+
+		#define FILLDESTS(z, i, data) dests[i] = dest{eosio::string_to_name(STR(MINTDEST ## i)), MINTVAL ## i}; premint_amount += MINTVAL ## i;
+		BOOST_PP_REPEAT(MINTCNT, FILLDESTS, );
+
+		eosio::action(eosio::permission_level(this->_self, N(active)), asset_tkn.contract, N(create), create{this->_self, eosio::asset(HARD_CAP_TKN + premint_amount, this->asset_tkn.symbol)}).send();
+		for (int i = 0; i < MINTCNT; i++) {
+			this->asset_tkn.set_amount(dests[i].amount);
+			eosio::action(eosio::permission_level(this->_self, N(active)), asset_tkn.contract, N(issue), issue{dests[i].to, this->asset_tkn, "initial token distribution"}).send();
+		}
+		eosio::action(eosio::permission_level(this->_self, N(active)), asset_tkn.contract, N(chissuer), chissuer{this->asset_tkn.symbol, eosio::string_to_name(STR(ISSUER))}).send();
+	}
 }
 
 crowdsale::~crowdsale() {
