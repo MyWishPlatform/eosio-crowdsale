@@ -24,6 +24,7 @@ crowdsale::~crowdsale() {
 	this->state_singleton.set(this->state, this->_self);
 }
 
+// debug
 void crowdsale::init() {
 	this->state = default_parameters();
 }
@@ -125,10 +126,4 @@ void crowdsale::finalize() {
 	this->state.finalized = true;
 }
 
-// debug
-void crowdsale::setfinalize(bool value) {
-	require_auth(this->_self);
-	this->state.finalized = !!value;
-}
-
-EOSIO_ABI(crowdsale, (init)(transfer)(white)(unwhite)(finalize)(setfinalize));
+EOSIO_ABI(crowdsale, (init)(transfer)(white)(unwhite)(finalize));

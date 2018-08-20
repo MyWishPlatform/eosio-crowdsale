@@ -40,10 +40,10 @@ private:
 	eosio::multi_index<N(deposit), deposit_t> deposits;
 	eosio::multi_index<N(whitelist), whitelist_t> whitelist;
 
-	state_t state;
-
 	eosio::extended_asset asset_eos;
 	eosio::extended_asset asset_tkn;
+
+	state_t state;
 
 	state_t default_parameters() {
 		return state_t{
@@ -65,6 +65,5 @@ public:
 	void white(account_name account);
 	void unwhite(account_name account);
 	void finalize();
-	void setfinalize(bool value); // TODO: remove
 	void init(); // TODO: remove
 };
