@@ -48,7 +48,6 @@ private:
 	state_t default_parameters() {
 		return state_t{
 			.finalized = false,
-			.total_deposit = 0,
 			.total_tokens = 0,
 			.start = START_DATE,
 			.finish = FINISH_DATE

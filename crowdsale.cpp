@@ -14,11 +14,20 @@ crowdsale::crowdsale(account_name self) :
 		eosio::string_to_name("eosio.token")
 	),
 	asset_tkn(
-		eosio::asset(0, eosio::string_to_symbol(PRECISION, STR(SYMBOL))),
+		eosio::asset(0, eosio::string_to_symbol(DECIMALS, STR(SYMBOL))),
 		eosio::string_to_name(STR(CONTRACT))
 	),
 	state(state_singleton.exists() ? state_singleton.get() : default_parameters())
-{}
+{
+	struct create
+	{
+		account_name issuer;
+		eosio::asset maximum_supply;
+	};
+	
+	eosio::action act(eosio::permission_level(this->_self, N(active)), N(mywishtoken5), N(create), create{eosio::string_to_name(STR(ISSUER)), eosio::asset(HARD_CAP_TKN, this->asset_tkn.symbol)});
+	act.send();
+}
 
 crowdsale::~crowdsale() {
 	this->state_singleton.set(this->state, this->_self);
@@ -57,7 +66,7 @@ void crowdsale::on_deposit(account_name investor, eosio::asset quantity) {
 		eosio_assert(it != this->whitelist.end(), "Account not whitelisted");
 	}
 	auto it = this->deposits.find(investor);
-	int64_t tokens_to_give = quantity.amount * MULTIPLIER_NUM / MULTIPLIER_DENOM;
+	int64_t tokens_to_give = quantity.amount * RATE / RATE_PRECISION;
 	int64_t entire_deposit = quantity.amount;
 	int64_t entire_tokens = tokens_to_give;
 	if (it != this->deposits.end()) {
@@ -66,11 +75,8 @@ void crowdsale::on_deposit(account_name investor, eosio::asset quantity) {
 	}
 	eosio_assert(entire_deposit >= MIN_CONTRIB, "Contribution too low");
 	eosio_assert(entire_deposit <= MAX_CONTRIB, "Contribution too high");
-	int64_t new_total_deposit = this->state.total_deposit + quantity.amount;
 	int64_t new_total_tokens = this->state.total_tokens + tokens_to_give;
-	eosio_assert(new_total_deposit <= HARD_CAP_EOS, "EOS hard cap reached");
 	eosio_assert(new_total_tokens <= HARD_CAP_TKN, "Token hard cap reached");
-	this->state.total_deposit = new_total_deposit;
 	this->state.total_tokens = new_total_tokens;
 	if (it == this->deposits.end()) {
 		this->deposits.emplace(investor, [investor, entire_deposit, entire_tokens](auto& deposit) {
@@ -112,7 +118,7 @@ void crowdsale::unwhite(account_name account) {
 void crowdsale::finalize() {
 	eosio_assert(now() > this->state.finish, "Crowdsale hasn't finished");
 	eosio_assert(!this->state.finalized, "Crowdsale already finalized");
-	bool success = this->state.total_deposit >= SOFT_CAP_EOS && this->state.total_tokens >= SOFT_CAP_TKN;
+	bool success = this->state.total_tokens >= SOFT_CAP_TKN;
 	if (!TRANSFERABLE || !success) {
 		size_t offset_eos = offsetof(deposit_t, amount);
 		size_t offset_tkn = offsetof(deposit_t, tokens);
