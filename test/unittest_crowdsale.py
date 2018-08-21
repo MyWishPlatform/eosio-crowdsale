@@ -2,6 +2,7 @@ import setup
 import eosf
 import node
 import unittest
+from configparser import ConfigParser
 
 setup.set_verbose(False)
 setup.set_json(False)
@@ -16,6 +17,11 @@ class CrowdsaleTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        config = ConfigParser()
+        config.read('test/config.ini')
+        global cfg
+        cfg = config['DEFAULT']
+
         testnet = node.reset()
         assert (not testnet.error)
 
@@ -81,6 +87,7 @@ class CrowdsaleTests(unittest.TestCase):
 
     def test_01(self):
         pass
+
 
 if __name__ == "__main__":
     unittest.main()
