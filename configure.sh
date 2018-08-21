@@ -26,10 +26,6 @@ opts=$(getopt \
 )
 
 function check_input() {
-	if [[ ${#mintdests[@]} != ${#mintvals[@]} ]]; then
-		>&2 echo "lengths mismatch"
-		err=1
-	fi
 	for field in ${ARGUMENT_LIST[@]}; do
 		if [[ $field == "mint" ]]; then
 			continue
