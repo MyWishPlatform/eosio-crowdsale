@@ -12,8 +12,12 @@ ARGUMENT_LIST=(
 	"hardcap"
 	"start"
 	"finish"
+	"mintdest"
+	"mintval"
 )
 
+mintdests=()
+mintvals=()
 whitelist=true      # whitelist on
 transferable=false  # transferable off
 rate=150            # rate 1.5
@@ -29,6 +33,12 @@ opts=$(getopt \
 )
 
 function out() {
+	mintcnt=${#mintdests[@]}
+	if [[ $mintcnt != ${#mintvals[@]} ]]; then
+		>&2 echo "lengths mismatch"
+		return
+	fi
+
 	echo "#define ISSUER $issuer"
 	echo "#define SYMBOL $symbol"
 	echo "#define DECIMALS $decimals"
@@ -48,6 +58,12 @@ function out() {
 
 	echo "#define START_DATE $start"
 	echo "#define FINISH_DATE $finish"
+
+	echo "#define MINTCNT $mintcnt"
+	for i in $(seq 0 $((mintcnt - 1))); do
+		echo "#define MINTDEST$i ${mintdests[$i]}"
+		echo "#define MINTVAL$i ${mintvals[$i]}"
+	done
 }
 
 eval set --$opts
@@ -115,6 +131,16 @@ while [[ $# -gt 0 ]]; do
 
 		--finish)
 			finish=$2
+			shift 2
+			;;
+
+		--mintdest)
+			mintdests+=($2)
+			shift 2
+			;;
+
+		--mintval)
+			mintvals+=($2)
 			shift 2
 			;;
 
