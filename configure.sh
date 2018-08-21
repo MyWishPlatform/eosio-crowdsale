@@ -12,18 +12,11 @@ ARGUMENT_LIST=(
 	"hardcap"
 	"start"
 	"finish"
-	"mintdest"
-	"mintval"
+	"mint"
 )
 
 mintdests=()
 mintvals=()
-whitelist=true      # whitelist on
-transferable=false  # transferable off
-rate=150            # rate 1.5
-ratedenom=100
-mincontrib=1000     # min contrib 0.1 EOS
-maxcontrib=100000   # max contrib 10 EOS
 
 opts=$(getopt \
 	--longoptions "$(printf "%s:," "${ARGUMENT_LIST[@]}")" \
@@ -32,13 +25,26 @@ opts=$(getopt \
 	-- "$@"
 )
 
-function out() {
-	mintcnt=${#mintdests[@]}
-	if [[ $mintcnt != ${#mintvals[@]} ]]; then
+function check_input() {
+	if [[ ${#mintdests[@]} != ${#mintvals[@]} ]]; then
 		>&2 echo "lengths mismatch"
-		return
+		err=1
 	fi
+	for field in ${ARGUMENT_LIST[@]}; do
+		if [[ $field == "mint" ]]; then
+			continue
+		fi
+		if [[ -z "${!field}" ]]; then
+			>&2 echo "missing --$field"
+			err=1
+		fi
+	done
+	if [[ -n "$err" ]]; then
+		exit 0
+	fi
+}
 
+function out() {
 	echo "#define ISSUER $issuer"
 	echo "#define SYMBOL $symbol"
 	echo "#define DECIMALS $decimals"
@@ -59,6 +65,7 @@ function out() {
 	echo "#define START_DATE $start"
 	echo "#define FINISH_DATE $finish"
 
+	mintcnt=${#mintdests[@]}
 	echo "#define MINTCNT $mintcnt"
 	for i in $(seq 0 $((mintcnt - 1))); do
 		echo "#define MINTDEST$i ${mintdests[$i]}"
@@ -134,13 +141,14 @@ while [[ $# -gt 0 ]]; do
 			shift 2
 			;;
 
-		--mintdest)
-			mintdests+=($2)
-			shift 2
-			;;
-
-		--mintval)
-			mintvals+=($2)
+		--mint)
+			arr=($2)
+			if [[ ${#arr[@]} != 2 ]]; then
+				echo "--mint arguments should be like this: \"destination value\""
+				exit 0
+			fi
+			mintdests+=(${arr[0]})
+			mintvals+=(${arr[1]})
 			shift 2
 			;;
 
@@ -150,4 +158,5 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 
+check_input
 out
