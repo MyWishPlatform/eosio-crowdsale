@@ -1,5 +1,6 @@
 #include "crowdsale.hpp"
 #include "override.h"
+#include <eosiolib/print.hpp>
 
 #define STR_EXPAND(C) #C
 #define STR(C) STR_EXPAND(C)
@@ -157,4 +158,8 @@ void crowdsale::finalize() {
 	this->state.finalized = true;
 }
 
-EOSIO_ABI(crowdsale, (init)(transfer)(white)(unwhite)(finalize));
+void crowdsale::test(account_name acc) {
+    print("Hello: ", eosio::name{acc});
+}
+
+EOSIO_ABI(crowdsale, (init)(transfer)(white)(unwhite)(finalize)(test));
