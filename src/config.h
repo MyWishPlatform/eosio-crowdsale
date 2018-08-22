@@ -11,7 +11,7 @@
 #define HARD_CAP_TKN 10000000000
 #define START_DATE 1534780454
 #define FINISH_DATE 1534781454
-#define CONTRACT mywishtoken5
+#define CONTRACT tkn.deployer
 
 #define MINTCNT 5
 #define MINTDEST0 mywishio

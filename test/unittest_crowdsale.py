@@ -29,6 +29,7 @@ class CrowdsaleTests(unittest.TestCase):
         assert (not node.reset().error)
         global wallet
         global eosio
+        global mywishtoken5
         global token_deployer
         global crowdsale_deployer
 
@@ -37,8 +38,8 @@ class CrowdsaleTests(unittest.TestCase):
         eosio = eosf.AccountMaster()
         wallet.import_key(eosio)
 
-        mywishtoken5 = eosf.account(eosio, "mywishtoken5")
-        wallet.import_key(mywishtoken5)
+        for x in range(int(cfg["MINTCNT"])):
+            wallet.import_key(eosf.account(eosio, cfg["MINTDEST" + str(x)]))
 
         token_deployer = eosf.account(eosio, "tkn.deployer")
         wallet.import_key(token_deployer)
@@ -129,13 +130,11 @@ class CrowdsaleTests(unittest.TestCase):
         pass
 
     def test_01(self):
-        pass
-        # print(contract_crowdsale.table("stat", "WISH"))
-        # print(contract_token.table("stat", "WISH"))
-        # print(contract_token.table("accounts", "WISH"))
-
-        # cprint(contract_crowdsale.table('deposits', 'mywishio'), 'red')
-        # cprint(contract_crowdsale.table('whitelist', 'mywishio'), 'red')
+        cprint("1. Check premint", "green")
+        for x in range(int(cfg["MINTCNT"])):
+            expected_value = int(cfg["MINTVAL" + str(x)]) / 10 ** int(cfg["DECIMALS"])
+            real_value = float(contract_token.table("accounts", cfg["MINTDEST" + str(x)]).json["rows"][0]["balance"][:-4]) # 4 change to SYMBOL LENGTH
+            assert (expected_value == real_value)
 
 
 if __name__ == "__main__":
