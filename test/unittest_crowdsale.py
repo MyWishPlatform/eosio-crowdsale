@@ -37,6 +37,9 @@ class CrowdsaleTests(unittest.TestCase):
         eosio = eosf.AccountMaster()
         wallet.import_key(eosio)
 
+        mywishtoken5 = eosf.account(eosio, "mywishtoken5")
+        wallet.import_key(mywishtoken5)
+
         token_deployer = eosf.account(eosio, "tkn.deployer")
         wallet.import_key(token_deployer)
 
@@ -79,46 +82,41 @@ class CrowdsaleTests(unittest.TestCase):
         assert (not deployment_crowdsale.error)
         assert (not crowdsale_deployer.code().error)
 
+        assert (not contract_eosio_bios.push_action(
+            "updateauth",
+            json.dumps({
+                "account": str(crowdsale_deployer),
+                "permission": "active",
+                "parent": "owner",
+                "auth": {
+                    "threshold": 1,
+                    "keys": [
+                        {
+                            "key": str(crowdsale_deployer.json["permissions"][1]["required_auth"]["keys"][0]["key"]),
+                            "weight": 1
+                        }
+                    ],
+                    "accounts": [
+                        {
+                            "permission": {
+                                "actor": str(crowdsale_deployer),
+                                "permission": "eosio.code"
+                            },
+                            "weight": 1
+                        }
+                    ],
+                    "waits": []
+                }
+            }),
+            crowdsale_deployer
+        ).error)
 
-
-
-        crowdsale_deployer_pubkey = crowdsale_deployer.json["permissions"][1]["required_auth"]["keys"][0]["key"]
-        permissionActionJSON = {
-            "account": str(crowdsale_deployer),
-            "permission": "active",
-            "parent": "owner",
-            "auth": {
-                "threshold": 1,
-                "keys": [
-                    {
-                        "key": str(crowdsale_deployer_pubkey),
-                        "weight": 1
-                    }
-                ],
-                "accounts": [
-                    {
-                        "permission": {
-                            "actor": str(crowdsale_deployer),
-                            "permission": "eosio.code"
-                        },
-                        "weight": 1
-                    }
-                ],
-                "waits": []
-            }
-        }
-        setPermissionAction = json.dumps(permissionActionJSON)
-        assert (not contract_eosio_bios.push_action("updateauth", setPermissionAction, crowdsale_deployer).error)
-
-
-
-
-        # assert (not contract_crowdsale.push_action(
-        #     "init",
-        #     '{}',
-        #     crowdsale_deployer,
-        #     output=True
-        # ).error)
+        assert (not contract_crowdsale.push_action(
+            "init",
+            json.dumps({}),
+            crowdsale_deployer,
+            output=True
+        ).error)
 
     @classmethod
     def tearDownClass(cls):
@@ -131,13 +129,7 @@ class CrowdsaleTests(unittest.TestCase):
         pass
 
     def test_01(self):
-        contract_crowdsale.push_action(
-            "test",
-            json.dumps({
-                "acc": str(crowdsale_deployer)
-            }),
-            crowdsale_deployer
-        )
+        pass
         # print(contract_crowdsale.table("stat", "WISH"))
         # print(contract_token.table("stat", "WISH"))
         # print(contract_token.table("accounts", "WISH"))

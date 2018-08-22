@@ -158,8 +158,4 @@ void crowdsale::finalize() {
 	this->state.finalized = true;
 }
 
-void crowdsale::test(account_name acc) {
-    print("Hello: ", eosio::name{acc});
-}
-
-EOSIO_ABI(crowdsale, (init)(transfer)(white)(unwhite)(finalize)(test));
+EOSIO_ABI(crowdsale, (init)(transfer)(white)(unwhite)(finalize));
