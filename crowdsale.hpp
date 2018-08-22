@@ -59,10 +59,10 @@ private:
 public:
 	crowdsale(account_name self);
 	~crowdsale();
+	void init();
 	void transfer(uint64_t sender, uint64_t receiver);
 	void on_deposit(account_name investor, eosio::asset quantity);
 	void white(account_name account);
 	void unwhite(account_name account);
 	void finalize();
-	void init(); // TODO: remove
 };

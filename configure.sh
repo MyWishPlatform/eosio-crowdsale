@@ -13,6 +13,7 @@ ARGUMENT_LIST=(
 	"start"
 	"finish"
 	"mint"
+	"contract"
 )
 
 mintdests=()
@@ -41,8 +42,9 @@ function usage() {
 	echo "--start - ICO start date in unix time"
 	echo "--finish - ICO end date in unix time"
 	echo "--mint - add mint destination"
+	echo "--contract - token contract account"
 	echo "Example:"
-	echo "./configure.sh --issuer mywishio --symbol WISH --decimals 4 --whitelist false --transferable false --rate 2 --ratedenom 1 --mincontrib 10000 --maxcontrib 10000000 --softcap 1000000 --hardcap 100000000 --start 1514764800 --finish 1527811200 --mint \"mywishio 100000\" --mint \"mywishairdr2 20000\""
+	echo "./configure.sh --contract mywishtokens --issuer mywishio --symbol WISH --decimals 4 --whitelist false --transferable false --rate 2 --ratedenom 1 --mincontrib 10000 --maxcontrib 10000000 --softcap 1000000 --hardcap 100000000 --start 1514764800 --finish 1527811200 --mint \"mywishio 100000\" --mint \"mywishairdr2 20000\""
 }
 
 function check_input() {
@@ -81,6 +83,8 @@ function out() {
 
 	echo "#define START_DATE $start"
 	echo "#define FINISH_DATE $finish"
+
+	echo "#define CONTRACT $contract"
 
 	mintcnt=${#mintdests[@]}
 	echo "#define MINTCNT $mintcnt"
@@ -166,6 +170,11 @@ while [[ $# -gt 0 ]]; do
 			fi
 			mintdests+=(${arr[0]})
 			mintvals+=(${arr[1]})
+			shift 2
+			;;
+
+		--contract)
+			contract=$2
 			shift 2
 			;;
 

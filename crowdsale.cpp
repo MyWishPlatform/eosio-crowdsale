@@ -4,8 +4,6 @@
 #define STR_EXPAND(C) #C
 #define STR(C) STR_EXPAND(C)
 
-#define CONTRACT mywishtoken5
-
 crowdsale::crowdsale(account_name self) :
 	eosio::contract(self),
 	state_singleton(this->_self, this->_self),
@@ -21,42 +19,32 @@ crowdsale::crowdsale(account_name self) :
 	),
 	state(state_singleton.exists() ? state_singleton.get() : default_parameters())
 {
+}
+
+crowdsale::~crowdsale() {
+	this->state_singleton.set(this->state, this->_self);
+}
+
+void crowdsale::init() {
+	require_auth(this->_self);
+	this->state = default_parameters();
 	if (!state_singleton.exists()) {
-		struct create {
-			account_name issuer;
-			eosio::asset maximum_supply;
-		};
+		struct dest {
+			account_name to;
+			int64_t amount;
+		} dests[MINTCNT];
+		#define FILLDESTS(z, i, data)\
+			dests[i] = dest{\
+				eosio::string_to_name(STR(MINTDEST ## i)),\
+				MINTVAL ## i\
+			};
+		BOOST_PP_REPEAT(MINTCNT, FILLDESTS, );
+
 		struct issue {
 			account_name to;
 			eosio::asset quantity;
 			eosio::string memo;
 		};
-		struct chissuer {
-			eosio::symbol_type symbol;
-			account_name new_issuer;
-		};
-
-		struct dest {
-			account_name to;
-			int64_t amount;
-		} dests[MINTCNT];
-		this->asset_tkn.set_amount(HARD_CAP_TKN);
-
-		#define FILLDESTS(z, i, data)\
-			dests[i] = dest{\
-				eosio::string_to_name(STR(MINTDEST ## i)),\
-				MINTVAL ## i\
-			};\
-			this->asset_tkn += eosio::asset(MINTVAL ## i, this->asset_tkn.symbol);
-
-		BOOST_PP_REPEAT(MINTCNT, FILLDESTS, );
-
-		eosio::action(
-			eosio::permission_level(this->_self, N(active)),
-			asset_tkn.contract,
-			N(create),
-			create{this->_self, this->asset_tkn}
-		).send();
 
 		for (int i = 0; i < MINTCNT; i++) {
 			this->asset_tkn.set_amount(dests[i].amount);
@@ -67,23 +55,7 @@ crowdsale::crowdsale(account_name self) :
 				issue{dests[i].to, this->asset_tkn, "initial token distribution"}
 			).send();
 		}
-
-		eosio::action(
-			eosio::permission_level(this->_self, N(active)),
-			asset_tkn.contract,
-			N(chissuer),
-			chissuer{this->asset_tkn.symbol, eosio::string_to_name(STR(ISSUER))}
-		).send();
 	}
-}
-
-crowdsale::~crowdsale() {
-	this->state_singleton.set(this->state, this->_self);
-}
-
-// debug
-void crowdsale::init() {
-	this->state = default_parameters();
 }
 
 void crowdsale::send_funds(account_name target, eosio::extended_asset asset) {
