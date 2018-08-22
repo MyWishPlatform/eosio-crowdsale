@@ -122,7 +122,7 @@ void crowdsale::on_deposit(account_name investor, eosio::asset quantity) {
 		entire_tokens += it->tokens;
 	}
 	eosio_assert(entire_deposit >= MIN_CONTRIB, "Contribution too low");
-	eosio_assert(entire_deposit <= MAX_CONTRIB, "Contribution too high");
+	eosio_assert((entire_deposit <= MAX_CONTRIB) || !MAX_CONTRIB, "Contribution too high");
 	int64_t new_total_tokens = this->state.total_tokens + tokens_to_give;
 	eosio_assert(new_total_tokens <= HARD_CAP_TKN, "Token hard cap reached");
 	this->state.total_tokens = new_total_tokens;
