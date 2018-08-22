@@ -25,6 +25,26 @@ opts=$(getopt \
 	-- "$@"
 )
 
+function usage() {
+	echo "Usage: ./configure.sh [ARGS]"
+	echo "--issuer - account name"
+	echo "--symbol - uppercase token name"
+	echo "--decimals - decimals count"
+	echo "--whitelist - enable/disable whitelist (true|false)"
+	echo "--transferable - allow transfer while ICO is going on (true|false)"
+	echo "--rate - token rate nominator"
+	echo "--ratedenom - token rate denominator"
+	echo "--mincontrib - minimal contribution in EOS (10000 = 1.0000 EOS)"
+	echo "--maxcontrib - maximal contribution in EOS (10000 = 1.0000 EOS)"
+	echo "--softcap - soft cap in tokens (100000000 = 1.00000000 TKN if decimals is 8)"
+	echo "--hardcap - hard cap in tokens (100000000 = 1.00000000 TKN if decimals is 8)"
+	echo "--start - ICO start date in unix time"
+	echo "--finish - ICO end date in unix time"
+	echo "--mint - add mint destination"
+	echo "Example:"
+	echo "./configure.sh --issuer mywishio --symbol WISH --decimals 4 --whitelist false --transferable false --rate 2 --ratedenom 1 --mincontrib 10000 --maxcontrib 10000000 --softcap 1000000 --hardcap 100000000 --start 1514764800 --finish 1527811200 --mint \"mywishio 100000\" --mint \"mywishairdr2 20000\""
+}
+
 function check_input() {
 	for field in ${ARGUMENT_LIST[@]}; do
 		if [[ $field == "mint" ]]; then
@@ -36,6 +56,7 @@ function check_input() {
 		fi
 	done
 	if [[ -n "$err" ]]; then
+		usage
 		exit 0
 	fi
 }
