@@ -160,6 +160,11 @@ class CrowdsaleTests(unittest.TestCase):
     def test_01(self):
         print("1. Check premint")
 
+        # check that destination accounts has no tokens before initialize
+        for x in range(int(cfg["MINTCNT"])):
+            assert (len(self.token_contract.table("accounts", cfg["MINTDEST" + str(x)]).json["rows"]) == 0)
+
+        # execute 'init'
         assert (not self.crowdsale_contract.push_action(
             "init",
             json.dumps({}),
@@ -167,6 +172,7 @@ class CrowdsaleTests(unittest.TestCase):
             output=True
         ).error)
 
+        # check that destination addresses received their tokens after 'init'
         for x in range(int(cfg["MINTCNT"])):
             expected_value = int(cfg["MINTVAL" + str(x)]) / 10 ** int(cfg["DECIMALS"])
             real_value_with_symbol = self.token_contract \
