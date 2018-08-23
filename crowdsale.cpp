@@ -26,40 +26,45 @@ crowdsale::~crowdsale() {
 }
 
 void crowdsale::init() {
+	if (this->state_singleton.exists()) return;
 	require_auth(this->_self);
-	this->state = default_parameters();
-	if (!state_singleton.exists()) {
-		struct dest {
-			account_name to;
-			int64_t amount;
-		} dests[MINTCNT];
-		#define FILLDESTS(z, i, data)\
-			dests[i] = dest{\
-				eosio::string_to_name(STR(MINTDEST ## i)),\
-				MINTVAL ## i\
-			};
-		BOOST_PP_REPEAT(MINTCNT, FILLDESTS, );
 
-		struct issue {
-			account_name to;
-			eosio::asset quantity;
-			eosio::string memo;
+	struct dest {
+		account_name to;
+		int64_t amount;
+	} dests[MINTCNT];
+	#define FILLDESTS(z, i, data)\
+		dests[i] = dest{\
+			eosio::string_to_name(STR(MINTDEST ## i)),\
+			MINTVAL ## i\
 		};
+	BOOST_PP_REPEAT(MINTCNT, FILLDESTS, );
 
-		for (int i = 0; i < MINTCNT; i++) {
-			this->asset_tkn.set_amount(dests[i].amount);
-			eosio::action(
-				eosio::permission_level(this->_self, N(active)),
-				asset_tkn.contract,
-				N(issue),
-				issue{dests[i].to, this->asset_tkn, "initial token distribution"}
-			).send();
-		}
+	struct issue {
+		account_name to;
+		eosio::asset quantity;
+		eosio::string memo;
+	};
+
+	for (int i = 0; i < MINTCNT; i++) {
+		this->asset_tkn.set_amount(dests[i].amount);
+		eosio::action(
+			eosio::permission_level(this->_self, N(active)),
+			asset_tkn.contract,
+			N(issue),
+			issue{dests[i].to, this->asset_tkn, "initial token distribution"}
+		).send();
 	}
 }
 
 void crowdsale::send_funds(account_name target, eosio::extended_asset asset) {
-	eosio::currency::inline_transfer(this->_self, target, asset, "crowdsale");
+/*	eosio::action(
+		eosio::permission_level(this->_self, N(active)),
+		asset.contract,
+		N(transfer),
+		issue{dests[i].to, this->asset_tkn, "initial token distribution"}
+	).send();
+	eosio::currency::inline_transfer(this->_self, target, asset, "crowdsale");*/
 }
 
 void crowdsale::transfer(uint64_t sender, uint64_t receiver) {

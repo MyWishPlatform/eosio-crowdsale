@@ -24,6 +24,7 @@ private:
 		time_t finish;
 	};
 
+	// @abi table deposit
 	struct deposit_t {
 		account_name account;
 		int64_t amount;
@@ -31,6 +32,7 @@ private:
 		uint64_t primary_key() const { return account; }
 	};
 
+	// @abi table whitelist
 	struct whitelist_t {
 		account_name account;
 		uint64_t primary_key() const { return account; }
