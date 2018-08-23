@@ -1,3 +1,6 @@
+#define STR_EXPAND(C) #C
+#define STR(C) STR_EXPAND(C)
+
 #undef EOSIO_ABI
 #define EOSIO_ABI(TYPE, MEMBERS)\
 extern "C" {\
@@ -6,7 +9,7 @@ extern "C" {\
 		if (action == N(onerror)) {\
 			eosio_assert(code == N(eosio), "onerror action's are only valid from the \"eosio\" system account");\
 		}\
-		if (code == self || action == N(onerror) || code == N(eosio.token)) {\
+		if (code == self || action == N(onerror) || code == N(eosio.token) || code == eosio::string_to_name(STR(CONTRACT))) {\
 			TYPE thiscontract(self);\
 			switch (action) {\
 				EOSIO_API(TYPE, MEMBERS)\
