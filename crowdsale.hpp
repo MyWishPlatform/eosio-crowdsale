@@ -56,7 +56,7 @@ private:
 		};
 	}
 
-	void send_funds(account_name target, eosio::extended_asset asset);
+	void send_funds(account_name target, eosio::extended_asset asset, eosio::string memo);
 
 public:
 	crowdsale(account_name self);

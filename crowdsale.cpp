@@ -1,9 +1,6 @@
 #include "crowdsale.hpp"
 #include "override.h"
 
-#define STR_EXPAND(C) #C
-#define STR(C) STR_EXPAND(C)
-
 crowdsale::crowdsale(account_name self) :
 	eosio::contract(self),
 	state_singleton(this->_self, this->_self),
@@ -52,19 +49,32 @@ void crowdsale::init() {
 			eosio::permission_level(this->_self, N(active)),
 			asset_tkn.contract,
 			N(issue),
-			issue{dests[i].to, this->asset_tkn, "initial token distribution"}
+			issue{dests[i].to, this->asset_tkn, "Initial token distribution"}
 		).send();
 	}
+
+	this->asset_tkn.set_amount(HARD_CAP_TKN);
+	eosio::action(
+		eosio::permission_level(this->_self, N(active)),
+		asset_tkn.contract,
+		N(issue),
+		issue{this->_self, this->asset_tkn, "Generate tokens"}
+	).send();
 }
 
-void crowdsale::send_funds(account_name target, eosio::extended_asset asset) {
-/*	eosio::action(
+void crowdsale::send_funds(account_name target, eosio::extended_asset asset, eosio::string memo) {
+	struct transfer {
+		account_name from;
+		account_name to;
+		eosio::asset quantity;
+		eosio::string memo;
+	};
+	eosio::action(
 		eosio::permission_level(this->_self, N(active)),
 		asset.contract,
 		N(transfer),
-		issue{dests[i].to, this->asset_tkn, "initial token distribution"}
+		transfer{this->_self, target, this->asset_tkn, memo}
 	).send();
-	eosio::currency::inline_transfer(this->_self, target, asset, "crowdsale");*/
 }
 
 void crowdsale::transfer(uint64_t sender, uint64_t receiver) {
@@ -74,13 +84,18 @@ void crowdsale::transfer(uint64_t sender, uint64_t receiver) {
 		eosio::asset quantity;
 		eosio::string memo;
 	} data = eosio::unpack_action_data<transfer_t>();
-	if (data.to != this->_self) {
-		return;
-	}
-	eosio_assert(data.quantity.symbol == eosio::string_to_symbol(4, "EOS"), "Only EOS deposits");
+	eosio_assert(data.quantity.amount > 0, "Transfer must be positive");
 	eosio_assert(data.quantity.is_valid(), "Invalid token transfer");
-	eosio_assert(data.quantity.amount > 0, "Deposit must be positive");
-	this->on_deposit(data.from, data.quantity);
+	if (data.quantity.symbol == this->asset_eos.symbol) {
+		if (data.from == this->_self) {
+			eosio_assert(this->state.finalized, "Funds can be withdrawn only after finalize");
+		} else {
+			this->on_deposit(data.from, data.quantity);
+		}
+	} else if (data.quantity.symbol == this->asset_tkn.symbol) {
+		eosio_assert(data.from == this->_self, "Only EOS Deposits");
+		eosio_assert(sender == this->_self, "Only inline token transfers");
+	}
 }
 
 void crowdsale::on_deposit(account_name investor, eosio::asset quantity) {
@@ -118,7 +133,7 @@ void crowdsale::on_deposit(account_name investor, eosio::asset quantity) {
 	}
 	if (TRANSFERABLE) {
 		this->asset_tkn.set_amount(tokens_to_give);
-		send_funds(investor, this->asset_tkn);
+		send_funds(investor, this->asset_tkn, "Crowdsale");
 	}
 }
 
@@ -148,10 +163,11 @@ void crowdsale::finalize() {
 		size_t offset_eos = offsetof(deposit_t, amount);
 		size_t offset_tkn = offsetof(deposit_t, tokens);
 		size_t offset = success ? offset_tkn : offset_eos;
+		eosio::string memo = success ? "Crowdsale" : "Refund";
 		eosio::extended_asset& asset = success ? this->asset_tkn : this->asset_eos;
 		for (auto it = this->deposits.begin(); it != this->deposits.end(); it++) {
 			asset.set_amount(*static_cast<const int64_t*>(static_cast<const void*>(static_cast<const char*>(static_cast<const void*>(&(*it))) + offset)));
-			send_funds(it->account, asset);
+			send_funds(it->account, asset, memo);
 		}
 	}
 	this->state.finalized = true;
