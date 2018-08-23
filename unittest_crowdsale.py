@@ -23,13 +23,11 @@ class CrowdsaleTests(unittest.TestCase):
     def setUpClass(cls):
         global cfg
         cfg = {}
-        with open('src/config.h', 'r') as cfg_file:
+        with open('config.h', 'r') as cfg_file:
             for line in cfg_file.readlines():
                 match = re.search('#define (\w+) (\w+)', line)
                 if match:
                     cfg[match.group(1)] = match.group(2)
-
-        print(cfg['MINTCNT'])
 
         assert (not node.reset().error)
         global wallet
@@ -77,9 +75,9 @@ class CrowdsaleTests(unittest.TestCase):
         global contract_crowdsale
         contract_crowdsale = eosf.Contract(
             crowdsale_deployer,
-            "eosio-crowdsale",
-            wast_file='/build/crowdsale.wast',
-            abi_file='/build/crowdsale.abi'
+            "eosio-crowdsale/crowdsale",
+            wast_file='crowdsale.wast',
+            abi_file='crowdsale.abi'
         )
 
         assert (not contract_crowdsale.error)

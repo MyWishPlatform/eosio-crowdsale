@@ -1,7 +1,10 @@
 NAME=crowdsale
 
 all:
-	rm -rf build
-	mkdir build
-	eosiocpp -o build/$(NAME).wast src/$(NAME).cpp
-	eosiocpp -g build/$(NAME).abi src/$(NAME).cpp
+	rm -rf $(NAME)
+	mkdir $(NAME)
+	eosiocpp -o $(NAME)/$(NAME).wast $(NAME).cpp
+	eosiocpp -g $(NAME)/$(NAME).abi $(NAME).cpp
+
+test:
+	python3 unittest_crowdsale.py
