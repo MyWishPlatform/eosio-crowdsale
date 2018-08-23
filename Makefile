@@ -5,11 +5,11 @@ all:
 	rm -rf $(NAME)
 	mkdir $(NAME)
 	mv $(NAME).abi $(NAME)
-#	git submodule init
-#	git submodule update
-#	make -C eosiotoken
 	eosiocpp -o $(NAME)/$(NAME).wast $(NAME).cpp
 #	eosiocpp -g $(NAME)/$(NAME).abi $(NAME).cpp
 
 test:
+	git submodule init
+	git submodule update
+	make -C eosiotoken
 	python3 unittest_crowdsale.py
