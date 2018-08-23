@@ -23,7 +23,7 @@ crowdsale::~crowdsale() {
 }
 
 void crowdsale::init() {
-	if (this->state_singleton.exists()) return;
+	eosio_assert(!this->state_singleton.exists(), "Already initialized");
 	require_auth(this->_self);
 
 	struct dest {
