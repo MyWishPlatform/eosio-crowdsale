@@ -6,7 +6,7 @@ from termcolor import cprint
 import node
 import sess
 import unittest
-from configparser import ConfigParser
+import re
 
 setup.set_verbose(False)
 setup.set_json(False)
@@ -21,10 +21,15 @@ class CrowdsaleTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        config = ConfigParser()
-        config.read('test/config.ini')
         global cfg
-        cfg = config['DEFAULT']
+        cfg = {}
+        with open('src/config.h', 'r') as cfg_file:
+            for line in cfg_file.readlines():
+                match = re.search('#define (\w+) (\w+)', line)
+                if match:
+                    cfg[match.group(1)] = match.group(2)
+
+        print(cfg['MINTCNT'])
 
         assert (not node.reset().error)
         global wallet
@@ -130,10 +135,10 @@ class CrowdsaleTests(unittest.TestCase):
         pass
 
     def test_01(self):
-        cprint("1. Check premint", "green")
+        print("1. Check premint")
         for x in range(int(cfg["MINTCNT"])):
             expected_value = int(cfg["MINTVAL" + str(x)]) / 10 ** int(cfg["DECIMALS"])
-            real_value = float(contract_token.table("accounts", cfg["MINTDEST" + str(x)]).json["rows"][0]["balance"][:-4]) # 4 change to SYMBOL LENGTH
+            real_value = float(contract_token.table("accounts", cfg["MINTDEST" + str(x)]).json["rows"][0]["balance"][:-4])  # 4 change to SYMBOL LENGTH
             assert (expected_value == real_value)
 
 
