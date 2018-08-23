@@ -181,6 +181,14 @@ class CrowdsaleTests(unittest.TestCase):
             real_value = float(real_value_with_symbol[:-(len(cfg['SYMBOL']) + 1)])
             assert (expected_value == real_value)
 
+        # check that you cannot execute 'init' second time
+        assert (self.crowdsale_contract.push_action(
+            "init",
+            '{}',
+            self.crowdsale_deployer_acc,
+            output=True,
+            forceUnique=1
+        ).error)
 
 if __name__ == "__main__":
     unittest.main()
