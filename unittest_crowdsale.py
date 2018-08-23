@@ -25,7 +25,7 @@ class CrowdsaleTests(unittest.TestCase):
         cfg = {}
         with open('config.h', 'r') as cfg_file:
             for line in cfg_file.readlines():
-                match = re.search('#define (\w+) (\w+)', line)
+                match = re.search('#define (\w+) ([\w.]+)', line)
                 if match:
                     cfg[match.group(1)] = match.group(2)
 
@@ -44,7 +44,7 @@ class CrowdsaleTests(unittest.TestCase):
         for x in range(int(cfg["MINTCNT"])):
             wallet.import_key(eosf.account(eosio, cfg["MINTDEST" + str(x)]))
 
-        token_deployer = eosf.account(eosio, "tkn.deployer")
+        token_deployer = eosf.account(eosio, cfg["CONTRACT"])
         wallet.import_key(token_deployer)
 
         crowdsale_deployer = eosf.account(eosio, "ico.deployer")
@@ -136,7 +136,10 @@ class CrowdsaleTests(unittest.TestCase):
         print("1. Check premint")
         for x in range(int(cfg["MINTCNT"])):
             expected_value = int(cfg["MINTVAL" + str(x)]) / 10 ** int(cfg["DECIMALS"])
-            real_value = float(contract_token.table("accounts", cfg["MINTDEST" + str(x)]).json["rows"][0]["balance"][:-4])  # 4 change to SYMBOL LENGTH
+            real_value_with_symbol = contract_token\
+                .table("accounts", cfg["MINTDEST" + str(x)])\
+                .json["rows"][0]["balance"]
+            real_value = float(real_value_with_symbol[:-(len(cfg['SYMBOL']) + 1)])
             assert (expected_value == real_value)
 
 
