@@ -16,9 +16,11 @@ crowdsale::crowdsale(account_name self) :
 	),
 	state(state_singleton.exists() ? state_singleton.get() : default_parameters())
 {
+	eosio::print("crowdsale");
 }
 
 crowdsale::~crowdsale() {
+	eosio::print("~crowdsale");
 	this->state_singleton.set(this->state, this->_self);
 }
 
@@ -44,6 +46,7 @@ void crowdsale::init() {
 	};
 
 	for (int i = 0; i < MINTCNT; i++) {
+		this->state.inline_transfer++;
 		this->asset_tkn.set_amount(dests[i].amount);
 		eosio::action(
 			eosio::permission_level(this->_self, N(active)),
@@ -69,6 +72,7 @@ void crowdsale::send_funds(account_name target, eosio::extended_asset asset, eos
 		eosio::asset quantity;
 		eosio::string memo;
 	};
+	this->state.inline_transfer++;
 	eosio::action(
 		eosio::permission_level(this->_self, N(active)),
 		asset.contract,
@@ -92,9 +96,11 @@ void crowdsale::transfer(uint64_t sender, uint64_t receiver) {
 		} else {
 			this->on_deposit(data.from, data.quantity);
 		}
-	} else if (data.quantity.symbol == this->asset_tkn.symbol) {
+	} else {
+		eosio::print(std::to_string(this->state.inline_transfer).c_str());
 		eosio_assert(data.from == this->_self, "Only EOS Deposits");
-		eosio_assert(sender == this->_self, "Only inline token transfers");
+		eosio_assert(this->state.inline_transfer, "Only inline token transfers");
+		this->state.inline_transfer--;
 	}
 }
 

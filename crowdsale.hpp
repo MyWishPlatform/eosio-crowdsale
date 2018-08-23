@@ -22,6 +22,7 @@ private:
 		int64_t total_tokens;
 		time_t start;
 		time_t finish;
+		int32_t inline_transfer;
 	};
 
 	// @abi table deposit
@@ -52,7 +53,8 @@ private:
 			.finalized = false,
 			.total_tokens = 0,
 			.start = START_DATE,
-			.finish = FINISH_DATE
+			.finish = FINISH_DATE,
+			.inline_transfer = 0
 		};
 	}
 
