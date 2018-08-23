@@ -57,7 +57,12 @@ class CrowdsaleTests(unittest.TestCase):
         assert (not deployment_bios.error)
 
         global contract_token
-        contract_token = eosf.Contract(token_deployer, "eosio.token")
+        contract_token = eosf.Contract(
+            token_deployer,
+            "eosio-crowdsale/eosiotoken/eosio.token",
+            wast_file='eosio.token.wast',
+            abi_file='eosio.token.abi'
+        )
         assert (not contract_token.error)
         deployment_token = contract_token.deploy()
         assert (not deployment_token.error)
