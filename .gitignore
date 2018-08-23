@@ -1,2 +1,3 @@
 .idea/
-crowdsale/
+crowdsale/crowdsale.wasm
+crowdsale/crowdsale.wast
