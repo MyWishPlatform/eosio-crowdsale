@@ -42,11 +42,13 @@ class CrowdsaleTests(unittest.TestCase):
         assert (not node.reset().error)
 
         # create wallet
+        eosf.set_verbosity([])  # disable logs
         self.wallet = eosf.Wallet()
 
         # create eosio account
         self.eosio_acc = eosf.AccountMaster()
         self.wallet.import_key(self.eosio_acc)
+        eosf.set_verbosity()  # enable logs
 
         # create MINTDEST accounts
         for x in range(int(cfg["MINTCNT"])):
@@ -100,11 +102,15 @@ class CrowdsaleTests(unittest.TestCase):
         ).error)
 
         # create custom token asset
+        max_supply = int(cfg["HARD_CAP_TKN"])
+        for x in range(int(cfg["MINTCNT"])):
+            max_supply += int(cfg["MINTVAL" + str(x)])
+        max_supply /= 10 ** int(cfg["DECIMALS"])
         assert (not self.token_contract.push_action(
             "create",
             json.dumps({
                 "issuer": str(self.crowdsale_deployer_acc),
-                "maximum_supply": "10000019375.00 WISH"
+                "maximum_supply": str(max_supply) + " " + cfg["SYMBOL"]
             }),
             self.token_deployer_acc
         ).error)
@@ -158,7 +164,7 @@ class CrowdsaleTests(unittest.TestCase):
         node.stop()
 
     def test_01(self):
-        print("1. Check premint")
+        print(".1. Check premint")
 
         # check that destination accounts has no tokens before initialize
         for x in range(int(cfg["MINTCNT"])):
@@ -168,8 +174,7 @@ class CrowdsaleTests(unittest.TestCase):
         assert (not self.crowdsale_contract.push_action(
             "init",
             json.dumps({}),
-            self.crowdsale_deployer_acc,
-            output=True
+            self.crowdsale_deployer_acc
         ).error)
 
         # check that destination addresses received their tokens after 'init'
