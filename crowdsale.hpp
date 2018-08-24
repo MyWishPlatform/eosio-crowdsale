@@ -11,6 +11,25 @@
 
 class crowdsale : public eosio::contract {
 private:
+	static constexpr long long pow10[16] = {
+		1ll,
+		10ll,
+		100ll,
+		1000ll,
+		10000ll,
+		100000ll,
+		1000000ll,
+		10000000ll,
+		100000000ll,
+		1000000000ll,
+		10000000000ll,
+		100000000000ll,
+		1000000000000ll,
+		10000000000000ll,
+		100000000000000ll,
+		1000000000000000ll,
+	};
+
 	struct multiplier_t {
 		uint32_t num;
 		uint32_t denom;
@@ -18,7 +37,6 @@ private:
 
 	struct state_t {
 		bool finalized;
-		int64_t total_deposit;
 		int64_t total_tokens;
 		time_t start;
 		time_t finish;
