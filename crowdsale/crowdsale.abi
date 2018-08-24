@@ -13,9 +13,6 @@
           "name": "finalized",
           "type": "bool"
         },{
-          "name": "total_deposit",
-          "type": "int64"
-        },{
           "name": "total_tokens",
           "type": "int64"
         },{
