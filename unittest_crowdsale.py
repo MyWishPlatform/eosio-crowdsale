@@ -299,6 +299,103 @@ class CrowdsaleTests(unittest.TestCase):
         assert (expected_tokens == self.crowdsale_contract
                 .table("state", self.crowdsale_deployer_acc).json["rows"][0]["total_tokens"])
 
+        # check token balance
+        assert (expected_tokens == int(self.fromAsset(self.token_contract.table("accounts", buyer_acc)
+                                                      .json["rows"][0]["balance"])["amount"]))
+
+    def test_03(self):
+        cprint("3. Check buy from several accounts", "green")
+
+        # execute 'init'
+        assert (not self.crowdsale_contract.push_action(
+            "init",
+            json.dumps({}),
+            self.crowdsale_deployer_acc
+        ).error)
+
+        # create accounts for buyers
+        buyers_accs = []
+        for x in range(4):
+            buyers_accs.append(eosf.account(self.eosio_acc, "buyer" + str(x + 1)))
+            self.wallet.import_key(buyers_accs[x])
+
+        # # calculate how much EOS to send
+        min_contrib = int(cfg["MIN_CONTRIB"]) / 10 ** 4
+        max_contrib = int(cfg["MAX_CONTRIB"]) / 10 ** 4
+        eos_to_transfer = 1
+        if eos_to_transfer < min_contrib:
+            eos_to_transfer = min_contrib
+        elif eos_to_transfer > max_contrib:
+            eos_to_transfer = max_contrib
+
+        # issue tokens to buyers
+        eos_to_issue = eos_to_transfer + 1
+        for buyer in buyers_accs:
+            assert (not self.system_token_contract.push_action(
+                "issue",
+                json.dumps({
+                    "to": str(buyer),
+                    "quantity": self.toAsset(eos_to_issue, 4, "EOS"),
+                    "memo": "memo"
+                }),
+                self.system_token_deployer_acc
+            ).error)
+
+            assert (eos_to_issue == int(self.fromAsset(self.system_token_contract.table("accounts", buyer)
+                                                       .json["rows"][0]["balance"])["amount"]))
+
+        # whitelist accounts if needed
+        if bool(cfg["WHITELIST"]):
+            for buyer in buyers_accs:
+                assert (not self.crowdsale_contract.push_action(
+                    "white",
+                    json.dumps({
+                        "account": str(buyer)
+                    }),
+                    self.crowdsale_deployer_acc
+                ).error)
+
+        # calculate how much tokens each buyer will receive
+        expected_tokens_per_buyer = int(eos_to_transfer
+                                        * int(cfg["RATE"]) / int(cfg["RATE_DENOM"])
+                                        * 10 ** int(cfg["DECIMALS"]))
+        expected_all_tokens = 0
+        expected_all_eos = 0
+
+        # transfer EOS to crowdsale contract
+        for buyer in buyers_accs:
+            if (expected_all_tokens + expected_tokens_per_buyer) <= int(cfg["HARD_CAP_TKN"]):
+                assert (not self.system_token_contract.push_action(
+                    "transfer",
+                    json.dumps({
+                        "from": str(buyer),
+                        "to": str(self.crowdsale_deployer_acc),
+                        "quantity": self.toAsset(eos_to_transfer, 4, "EOS"),
+                        "memo": "memo"
+                    }),
+                    buyer
+                ).error)
+                expected_all_eos += eos_to_transfer
+                expected_all_tokens += expected_tokens_per_buyer
+
+                # check EOS balances
+                assert (expected_all_eos == int(self.fromAsset(self.system_token_contract
+                                                               .table("accounts", self.crowdsale_deployer_acc)
+                                                               .json["rows"][0]["balance"])["amount"]))
+                assert ((eos_to_issue - eos_to_transfer) == int(self.fromAsset(self.system_token_contract
+                                                                               .table("accounts", buyer)
+                                                                               .json["rows"][0]["balance"])["amount"]))
+
+                # check token balances
+                assert (expected_tokens_per_buyer == int(self.fromAsset(self.token_contract
+                                                                        .table("accounts", buyer)
+                                                                        .json["rows"][0]["balance"])["amount"]))
+                assert (expected_all_tokens == self.crowdsale_contract
+                        .table("state", self.crowdsale_deployer_acc)
+                        .json["rows"][0]["total_tokens"])
+            else:
+                break
+
 
 if __name__ == "__main__":
     unittest.main()
