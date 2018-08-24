@@ -205,7 +205,7 @@ class CrowdsaleTests(unittest.TestCase):
         ).error)
 
     def test_02(self):
-        cprint("2. Check successfully buy tokens", 'green')
+        cprint("2. Check buy tokens", 'green')
 
         # check that destination accounts has no tokens before initialize
         for x in range(int(cfg["MINTCNT"])):
@@ -221,16 +221,6 @@ class CrowdsaleTests(unittest.TestCase):
         # create account for buyer
         buyer_acc = eosf.account(self.eosio_acc, "buyer")
         self.wallet.import_key(buyer_acc)
-
-        # whitelist account if needed
-        if bool(cfg["WHITELIST"]):
-            self.crowdsale_contract.push_action(
-                "white",
-                json.dumps({
-                    "account": str(buyer_acc)
-                }),
-                self.crowdsale_deployer_acc
-            )
 
         # calculate how much EOS to send
         min_contrib = int(cfg["MIN_CONTRIB"]) / 10 ** 4
@@ -255,7 +245,29 @@ class CrowdsaleTests(unittest.TestCase):
         assert (eos_to_issue == int(self.fromAsset(self.system_token_contract.table("accounts", buyer_acc)
                                                    .json["rows"][0]["balance"])["amount"]))
 
-        # transfer tokens to crowdsale contract
+        if bool(cfg["WHITELIST"]):
+            # check that not whitelisted user cannot send EOS to contract
+            assert (self.system_token_contract.push_action(
+                "transfer",
+                json.dumps({
+                    "from": str(buyer_acc),
+                    "to": str(self.crowdsale_deployer_acc),
+                    "quantity": self.toAsset(eos_to_transfer, 4, "EOS"),
+                    "memo": "memo"
+                }),
+                buyer_acc
+            ).error)
+
+            # whitelist account if needed
+            assert (not self.crowdsale_contract.push_action(
+                "white",
+                json.dumps({
+                    "account": str(buyer_acc)
+                }),
+                self.crowdsale_deployer_acc
+            ).error)
+
+        # transfer EOS to crowdsale contract
         assert (not self.system_token_contract.push_action(
             "transfer",
             json.dumps({
