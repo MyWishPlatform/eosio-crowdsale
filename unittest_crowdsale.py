@@ -289,12 +289,13 @@ class CrowdsaleTests(unittest.TestCase):
 
         # check state in crowdsale
         deposit = self.crowdsale_contract.table("deposit", self.crowdsale_deployer_acc).json["rows"][0]
-        expected_tokens = eos_to_transfer * int(cfg["RATE"]) / int(cfg["RATE_DENOM"])
+        expected_tokens = int(eos_to_transfer * int(cfg["RATE"]) / int(cfg["RATE_DENOM"]) * 10 ** int(cfg["DECIMALS"]))
         assert (deposit["account"] == buyer_acc.name)
         assert (deposit["amount"] == eos_to_transfer * 10 ** 4)
         assert (deposit["tokens"] == expected_tokens)
-        assert (buyer_acc.name == self.crowdsale_contract
-                .table("whitelist", self.crowdsale_deployer_acc).json["rows"][0]["account"])
+        if bool(cfg["WHITELIST"]):
+            assert (buyer_acc.name == self.crowdsale_contract.table("whitelist", self.crowdsale_deployer_acc)
+                    .json["rows"][0]["account"])  # if whitelist is enabled
         assert (expected_tokens == self.crowdsale_contract
                 .table("state", self.crowdsale_deployer_acc).json["rows"][0]["total_tokens"])
 
