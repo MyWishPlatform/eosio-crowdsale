@@ -1,6 +1,12 @@
 #include "crowdsale.hpp"
 #include "override.hpp"
 
+#ifdef DEBUG
+#define NOW this->state.time
+#else
+#define NOW now()
+#endif
+
 crowdsale::crowdsale(account_name self) :
 	eosio::contract(self),
 	state_singleton(this->_self, this->_self),
@@ -19,6 +25,7 @@ crowdsale::crowdsale(account_name self) :
 }
 
 crowdsale::~crowdsale() {
+	eosio_assert(this->state.inline_call >= 0, "inline_call can't be negative");
 	this->state_singleton.set(this->state, this->_self);
 }
 
@@ -178,4 +185,11 @@ void crowdsale::refund(account_name investor) {
 	send_funds(investor, this->asset_eos, "Refund");
 }
 
+#ifdef DEBUG
+void crowdsale::settime(time_t time) {
+	this->state.time = time;
+}
+EOSIO_ABI(crowdsale, (init)(white)(unwhite)(finalize)(refund)(transfer)(unlock)(settime));
+#else
 EOSIO_ABI(crowdsale, (init)(white)(unwhite)(finalize)(refund)(transfer)(unlock));
+#endif

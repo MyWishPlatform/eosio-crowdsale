@@ -21,6 +21,9 @@ private:
 		time_t start;
 		time_t finish;
 		int32_t inline_call;
+#ifdef DEBUG
+		time_t time;
+#endif
 	};
 
 	// @abi table deposit
@@ -52,7 +55,7 @@ private:
 			.total_tokens = 0,
 			.start = START_DATE,
 			.finish = FINISH_DATE,
-			.inline_call = 0
+			.inline_call = 0,
 		};
 	}
 
@@ -69,4 +72,7 @@ public:
 	void unwhite(account_name account);
 	void finalize(account_name withdraw_to);
 	void refund(account_name investor);
+#ifdef DEBUG
+	void settime();
+#endif
 };
