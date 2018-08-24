@@ -73,6 +73,6 @@ public:
 	void finalize(account_name withdraw_to);
 	void refund(account_name investor);
 #ifdef DEBUG
-	void settime();
+	void settime(time_t time);
 #endif
 };
