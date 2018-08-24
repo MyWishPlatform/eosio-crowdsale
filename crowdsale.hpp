@@ -1,11 +1,8 @@
 #pragma once
 
-#include <eosiolib/currency.hpp>
-#include <eosiolib/vector.hpp>
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/singleton.hpp>
-
-#include <string>
+#include <eosiolib/asset.hpp>
 
 #include "config.h"
 #include "pow10.h"
@@ -59,7 +56,7 @@ private:
 		};
 	}
 
-	void send_funds(account_name target, eosio::extended_asset asset, eosio::string memo);
+	void send_funds(account_name target, eosio::extended_asset asset, std::string memo);
 
 public:
 	crowdsale(account_name self);

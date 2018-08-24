@@ -16,11 +16,9 @@ crowdsale::crowdsale(account_name self) :
 	),
 	state(state_singleton.exists() ? state_singleton.get() : default_parameters())
 {
-	eosio::print("crowdsale");
 }
 
 crowdsale::~crowdsale() {
-	eosio::print("~crowdsale");
 	this->state_singleton.set(this->state, this->_self);
 }
 
@@ -42,7 +40,7 @@ void crowdsale::init() {
 	struct issue {
 		account_name to;
 		eosio::asset quantity;
-		eosio::string memo;
+		std::string memo;
 	};
 
 	for (int i = 0; i < MINTCNT; i++) {
@@ -65,12 +63,12 @@ void crowdsale::init() {
 	).send();
 }
 
-void crowdsale::send_funds(account_name target, eosio::extended_asset asset, eosio::string memo) {
+void crowdsale::send_funds(account_name target, eosio::extended_asset asset, std::string memo) {
 	struct transfer {
 		account_name from;
 		account_name to;
 		eosio::asset quantity;
-		eosio::string memo;
+		std::string memo;
 	};
 	this->state.inline_transfer++;
 	eosio::action(
@@ -86,7 +84,7 @@ void crowdsale::transfer(uint64_t sender, uint64_t receiver) {
 		account_name from;
 		account_name to;
 		eosio::asset quantity;
-		eosio::string memo;
+		std::string memo;
 	} data = eosio::unpack_action_data<transfer_t>();
 	eosio_assert(data.quantity.amount > 0, "Transfer must be positive");
 	eosio_assert(data.quantity.is_valid(), "Invalid token transfer");
@@ -97,7 +95,6 @@ void crowdsale::transfer(uint64_t sender, uint64_t receiver) {
 			this->on_deposit(data.from, data.quantity);
 		}
 	} else {
-		eosio::print(std::to_string(this->state.inline_transfer).c_str());
 		eosio_assert(data.from == this->_self, "Only EOS Deposits");
 		eosio_assert(this->state.inline_transfer, "Only inline token transfers");
 		this->state.inline_transfer--;
@@ -169,7 +166,7 @@ void crowdsale::finalize() {
 		size_t offset_eos = offsetof(deposit_t, amount);
 		size_t offset_tkn = offsetof(deposit_t, tokens);
 		size_t offset = success ? offset_tkn : offset_eos;
-		eosio::string memo = success ? "Crowdsale" : "Refund";
+		std::string memo = success ? "Crowdsale" : "Refund";
 		eosio::extended_asset& asset = success ? this->asset_tkn : this->asset_eos;
 		for (auto it = this->deposits.begin(); it != this->deposits.end(); it++) {
 			asset.set_amount(*static_cast<const int64_t*>(static_cast<const void*>(static_cast<const char*>(static_cast<const void*>(&(*it))) + offset)));
