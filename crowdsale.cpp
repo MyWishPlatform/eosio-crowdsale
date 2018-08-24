@@ -87,8 +87,8 @@ void crowdsale::init() {
 }
 
 void crowdsale::on_deposit(account_name investor, eosio::asset quantity) {
-	eosio_assert(now() >= this->state.start, "Crowdsale hasn't started");
-	eosio_assert(now() <= this->state.finish, "Crowdsale finished");
+	eosio_assert(NOW >= this->state.start, "Crowdsale hasn't started");
+	eosio_assert(NOW <= this->state.finish, "Crowdsale finished");
 
 	eosio_assert(quantity.amount >= MIN_CONTRIB, "Contribution too low");
 	eosio_assert((quantity.amount <= MAX_CONTRIB) || !MAX_CONTRIB, "Contribution too high");
@@ -151,7 +151,7 @@ void crowdsale::unwhite(account_name account) {
 }
 
 void crowdsale::finalize(account_name withdraw_to) {
-	eosio_assert(now() > this->state.finish || this->state.total_tokens >= HARD_CAP_TKN, "Crowdsale hasn't finished");
+	eosio_assert(NOW > this->state.finish || this->state.total_tokens >= HARD_CAP_TKN, "Crowdsale hasn't finished");
 	eosio_assert(this->state.total_tokens >= SOFT_CAP_TKN, "Softcap not reached");
 
 	require_auth(this->_self);
@@ -173,7 +173,7 @@ void crowdsale::finalize(account_name withdraw_to) {
 }
 
 void crowdsale::refund(account_name investor) {
-	eosio_assert(now() > this->state.finish, "Crowdsale hasn't finished");
+	eosio_assert(NOW > this->state.finish, "Crowdsale hasn't finished");
 	eosio_assert(this->state.total_tokens < SOFT_CAP_TKN, "Softcap reached");
 
 	require_auth(investor);
