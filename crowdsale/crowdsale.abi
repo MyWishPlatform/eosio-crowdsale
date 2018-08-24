@@ -23,7 +23,7 @@
           "type": "time_t"
         },{
           "name": "inline_transfer",
-          "type": "time_t"
+          "type": "int32"
         }
       ]
     },{
