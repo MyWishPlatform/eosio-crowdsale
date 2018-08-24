@@ -112,7 +112,7 @@ void crowdsale::on_deposit(account_name investor, eosio::asset quantity) {
 		eosio_assert(it != this->whitelist.end(), "Account not whitelisted");
 	}
 	auto it = this->deposits.find(investor);
-	int64_t tokens_to_give = quantity.amount * pow10[DECIMALS] * RATE / (pow10[4] * RATE_DENOM);
+	int64_t tokens_to_give = quantity.amount * POW10(DECIMALS) * RATE / (POW10(4) * RATE_DENOM);
 	int64_t entire_deposit = quantity.amount;
 	int64_t entire_tokens = tokens_to_give;
 	if (it != this->deposits.end()) {

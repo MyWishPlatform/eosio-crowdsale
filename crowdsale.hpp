@@ -8,28 +8,11 @@
 #include <string>
 
 #include "config.h"
+#include "pow10.h"
+#include "str_expand.h"
 
 class crowdsale : public eosio::contract {
 private:
-	static constexpr long long pow10[16] = {
-		1ll,
-		10ll,
-		100ll,
-		1000ll,
-		10000ll,
-		100000ll,
-		1000000ll,
-		10000000ll,
-		100000000ll,
-		1000000000ll,
-		10000000000ll,
-		100000000000ll,
-		1000000000000ll,
-		10000000000000ll,
-		100000000000000ll,
-		1000000000000000ll,
-	};
-
 	struct multiplier_t {
 		uint32_t num;
 		uint32_t denom;

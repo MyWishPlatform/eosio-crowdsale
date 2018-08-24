@@ -1,6 +1,3 @@
-#define STR_EXPAND(C) #C
-#define STR(C) STR_EXPAND(C)
-
 #undef EOSIO_ABI
 #define EOSIO_ABI(TYPE, MEMBERS)\
 extern "C" {\
