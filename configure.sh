@@ -10,8 +10,6 @@ ARGUMENT_LIST=(
 	"maxcontrib"
 	"softcap"
 	"hardcap"
-	"start"
-	"finish"
 	"mint"
 	"contract"
 )
@@ -39,12 +37,10 @@ function usage() {
 	echo "--maxcontrib - maximal contribution in EOS (10000 = 1.0000 EOS)"
 	echo "--softcap - soft cap in tokens (100000000 = 1.00000000 TKN if decimals is 8)"
 	echo "--hardcap - hard cap in tokens (100000000 = 1.00000000 TKN if decimals is 8)"
-	echo "--start - ICO start date in unix time"
-	echo "--finish - ICO end date in unix time"
 	echo "--mint - add mint destination"
 	echo "--contract - token contract account"
 	echo "Example:"
-	echo "./configure.sh --contract mywishtokens --issuer mywishio --symbol WISH --decimals 4 --whitelist false --transferable false --rate 2 --ratedenom 1 --mincontrib 10000 --maxcontrib 10000000 --softcap 1000000 --hardcap 100000000 --start 1514764800 --finish 1527811200 --mint \"mywishio 100000\" --mint \"mywishairdr2 20000\""
+	echo "./configure.sh --contract mywishtokens --issuer mywishio --symbol WISH --decimals 4 --whitelist false --transferable false --rate 2 --ratedenom 1 --mincontrib 10000 --maxcontrib 10000000 --softcap 1000000 --hardcap 100000000 --mint \"mywishio 100000\" --mint \"mywishairdr2 20000\""
 }
 
 function check_input() {
@@ -80,9 +76,6 @@ function out() {
 
 	echo "#define SOFT_CAP_TKN $softcap"
 	echo "#define HARD_CAP_TKN $hardcap"
-
-	echo "#define START_DATE $start"
-	echo "#define FINISH_DATE $finish"
 
 	echo "#define CONTRACT $contract"
 
@@ -149,16 +142,6 @@ while [[ $# -gt 0 ]]; do
 
 		--hardcap)
 			hardcap=$2
-			shift 2
-			;;
-
-		--start)
-			start=$2
-			shift 2
-			;;
-
-		--finish)
-			finish=$2
 			shift 2
 			;;
 
