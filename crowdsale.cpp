@@ -28,65 +28,7 @@ crowdsale::crowdsale(account_name self) :
 }
 
 crowdsale::~crowdsale() {
-	eosio_assert(this->state.inline_call >= 0, "inline_call can't be negative");
 	this->state_singleton.set(this->state, this->_self);
-}
-
-void crowdsale::send_funds(account_name target, eosio::extended_asset asset, std::string memo) {
-	struct transfer {
-		account_name from;
-		account_name to;
-		eosio::asset quantity;
-		std::string memo;
-	};
-	this->state.inline_call++;
-	eosio::action(
-		eosio::permission_level(this->_self, N(active)),
-		asset.contract,
-		N(transfer),
-		transfer{this->_self, target, this->asset_tkn, memo}
-	).send();
-}
-
-void crowdsale::init() {
-	eosio_assert(!this->state_singleton.exists(), "Already initialized");
-	require_auth(this->_self);
-
-	struct dest {
-		account_name to;
-		int64_t amount;
-	} dests[MINTCNT];
-	#define FILLDESTS(z, i, data)\
-		dests[i] = dest{\
-			eosio::string_to_name(STR(MINTDEST ## i)),\
-			MINTVAL ## i\
-		};
-	BOOST_PP_REPEAT(MINTCNT, FILLDESTS, );
-
-	struct issue {
-		account_name to;
-		eosio::asset quantity;
-		std::string memo;
-	};
-
-	for (int i = 0; i < MINTCNT; i++) {
-		this->state.inline_call++;
-		this->asset_tkn.set_amount(dests[i].amount);
-		eosio::action(
-			eosio::permission_level(this->_self, N(active)),
-			asset_tkn.contract,
-			N(issue),
-			issue{dests[i].to, this->asset_tkn, "Initial token distribution"}
-		).send();
-	}
-
-	this->asset_tkn.set_amount(HARD_CAP_TKN);
-	eosio::action(
-		eosio::permission_level(this->_self, N(active)),
-		asset_tkn.contract,
-		N(issue),
-		issue{this->_self, this->asset_tkn, "Generate tokens"}
-	).send();
 }
 
 void crowdsale::on_deposit(account_name investor, eosio::asset quantity) {
@@ -132,11 +74,35 @@ void crowdsale::on_deposit(account_name investor, eosio::asset quantity) {
 	}
 
 	this->asset_tkn.set_amount(tokens_to_give);
-	send_funds(investor, this->asset_tkn, "Crowdsale");
+	this->inline_issue(investor, this->asset_tkn, "Crowdsale");
+}
+
+void crowdsale::init(time_t start, time_t finish) {
+	eosio_assert(!this->state_singleton.exists(), "Already initialized");
+	require_auth(this->_self);
+
+	this->state.start = start;
+	this->state.finish = finish;
+
+	struct dest {
+		account_name to;
+		int64_t amount;
+	} dests[MINTCNT];
+	#define FILLDESTS(z, i, data)\
+		dests[i] = dest{\
+			eosio::string_to_name(STR(MINTDEST ## i)),\
+			MINTVAL ## i\
+		};
+	BOOST_PP_REPEAT(MINTCNT, FILLDESTS, );
+
+	for (int i = 0; i < MINTCNT; i++) {
+		this->asset_tkn.set_amount(dests[i].amount);
+		this->inline_issue(dests[i].to, this->asset_tkn, "Initial token distribution");
+	}
 }
 
 void crowdsale::white(account_name account) {
-	require_auth(this->_self);
+	require_auth(this->issuer);
 	eosio_assert(WHITELIST, "Whitelist not enabled");
 	auto it = this->whitelist.find(account);
 	eosio_assert(it == this->whitelist.end(), "Account already whitelisted");
@@ -146,7 +112,7 @@ void crowdsale::white(account_name account) {
 }
 
 void crowdsale::unwhite(account_name account) {
-	require_auth(this->_self);
+	require_auth(this->issuer);
 	eosio_assert(WHITELIST, "Whitelist not enabled");
 	auto it = this->whitelist.find(account);
 	eosio_assert(it != this->whitelist.end(), "Account not whitelisted");
@@ -156,23 +122,28 @@ void crowdsale::unwhite(account_name account) {
 void crowdsale::finalize(account_name withdraw_to) {
 	eosio_assert(NOW > this->state.finish || this->state.total_tokens + EOS2TKN(MIN_CONTRIB) >= HARD_CAP_TKN, "Crowdsale hasn't finished");
 	eosio_assert(this->state.total_tokens >= SOFT_CAP_TKN, "Softcap not reached");
+	eosio_assert(!TRANSFERABLE, "There is no reason to call finalize");
 
-	require_auth(this->_self);
+	struct unlock {
+		eosio::symbol_type symbol;
+	};
+	eosio::action(
+		eosio::permission_level(this->_self, N(active)),
+		this->asset_tkn.contract,
+		N(unlock),
+		unlock{this->asset_tkn.symbol}
+	).send();
+}
 
-	if (!TRANSFERABLE) {
-		struct unlock {
-			eosio::symbol_type symbol;
-		};
-		eosio::action(
-			eosio::permission_level(this->_self, N(active)),
-			this->asset_tkn.contract,
-			N(unlock),
-			unlock{this->asset_tkn.symbol}
-		).send();
-	}
+void crowdsale::withdraw() {
+	eosio_assert(this->state.total_tokens >= SOFT_CAP_TKN, "Softcap not reached");
+
+	require_auth(this->issuer);
 
 	this->asset_eos.set_amount(this->state.total_eoses);
-	send_funds(withdraw_to, this->asset_eos, "Withdraw");
+	this->inline_transfer(this->_self, this->issuer, this->asset_eos, "Withdraw");
+
+	this->state.total_eoses = 0;
 }
 
 void crowdsale::refund(account_name investor) {
@@ -185,14 +156,18 @@ void crowdsale::refund(account_name investor) {
 	eosio_assert(it != this->deposits.end(), "Nothing to refund");
 
 	this->asset_eos.set_amount(it->eoses);
-	send_funds(investor, this->asset_eos, "Refund");
+	this->inline_transfer(this->_self, investor, this->asset_eos, "Refund");
+
+	this->deposits.modify(it, investor, [](auto& d) {
+		d.eoses = 0;
+	});
 }
 
 #ifdef DEBUG
 void crowdsale::settime(time_t time) {
 	this->state.time = time;
 }
-EOSIO_ABI(crowdsale, (init)(white)(unwhite)(finalize)(refund)(transfer)(unlock)(settime));
+EOSIO_ABI(crowdsale, (init)(white)(unwhite)(finalize)(withdraw)(refund)(transfer)(settime));
 #else
-EOSIO_ABI(crowdsale, (init)(white)(unwhite)(finalize)(refund)(transfer)(unlock));
+EOSIO_ABI(crowdsale, (init)(white)(unwhite)(finalize)(withdraw)(refund)(transfer));
 #endif

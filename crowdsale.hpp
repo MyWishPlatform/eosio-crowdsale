@@ -20,7 +20,6 @@ private:
 		int64_t total_tokens;
 		time_t start;
 		time_t finish;
-		int32_t inline_call;
 #ifdef DEBUG
 		time_t time;
 #endif
@@ -51,31 +50,58 @@ private:
 
 	state_t state;
 
-	state_t default_parameters() {
+	void on_deposit(account_name investor, eosio::asset quantity);
+
+	state_t default_parameters() const {
 		return state_t{
 			.total_eoses = 0,
 			.total_tokens = 0,
-			.start = START_DATE,
-			.finish = FINISH_DATE,
-			.inline_call = 0,
+			.start = 0,
+			.finish = 0,
 #ifdef DEBUG
 			.time = 0
 #endif
 		};
 	}
 
-	void send_funds(account_name target, eosio::extended_asset asset, std::string memo);
+	void inline_issue(account_name to, eosio::extended_asset quantity, std::string memo) const {
+		struct issue {
+			account_name to;
+			eosio::asset quantity;
+			std::string memo;
+		};
+		eosio::action(
+			eosio::permission_level(this->_self, N(active)),
+			quantity.contract,
+			N(issue),
+			issue{to, quantity, memo}
+		).send();
+	}
+
+	void inline_transfer(account_name from, account_name to, eosio::extended_asset quantity, std::string memo) const {
+		struct transfer {
+			account_name from;
+			account_name to;
+			eosio::asset quantity;
+			std::string memo;
+		};
+		eosio::action(
+			eosio::permission_level(this->_self, N(active)),
+			quantity.contract,
+			N(transfer),
+			transfer{from, to, quantity, memo}
+		).send();
+	}
 
 public:
 	crowdsale(account_name self);
 	~crowdsale();
 	void transfer(uint64_t sender, uint64_t receiver);
-	void unlock(uint64_t sender, uint64_t receiver);
-	void init();
-	void on_deposit(account_name investor, eosio::asset quantity);
+	void init(time_t start, time_t finish);
 	void white(account_name account);
 	void unwhite(account_name account);
 	void finalize(account_name withdraw_to);
+	void withdraw();
 	void refund(account_name investor);
 #ifdef DEBUG
 	void settime(time_t time);
