@@ -22,6 +22,7 @@ crowdsale::crowdsale(account_name self) :
 		eosio::asset(0, eosio::string_to_symbol(DECIMALS, STR(SYMBOL))),
 		eosio::string_to_name(STR(CONTRACT))
 	),
+	issuer(eosio::string_to_name(ISSUER)),
 	state(state_singleton.exists() ? state_singleton.get() : default_parameters())
 {
 }
@@ -165,7 +166,7 @@ void crowdsale::finalize(account_name withdraw_to) {
 		eosio::action(
 			eosio::permission_level(this->_self, N(active)),
 			this->asset_tkn.contract,
-			N(transfer),
+			N(unlock),
 			unlock{this->asset_tkn.symbol}
 		).send();
 	}

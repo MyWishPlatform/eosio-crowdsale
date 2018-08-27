@@ -47,6 +47,8 @@ private:
 	eosio::extended_asset asset_eos;
 	eosio::extended_asset asset_tkn;
 
+	account_name issuer;
+
 	state_t state;
 
 	state_t default_parameters() {
