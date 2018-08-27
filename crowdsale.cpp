@@ -1,6 +1,8 @@
 #include "crowdsale.hpp"
 #include "override.hpp"
 
+#define EOS2TKN(EOS) EOS * POW10(DECIMALS) * RATE / (POW10(4) * RATE_DENOM)
+
 #ifdef DEBUG
 #define NOW this->state.time
 #else
@@ -100,7 +102,7 @@ void crowdsale::on_deposit(account_name investor, eosio::asset quantity) {
 
 	auto it = this->deposits.find(investor);
 
-	int64_t tokens_to_give = quantity.amount * POW10(DECIMALS) * RATE / (POW10(4) * RATE_DENOM);
+	int64_t tokens_to_give = EOS2TKN(quantity.amount);
 
 	this->state.total_eoses += quantity.amount;
 	this->state.total_tokens += tokens_to_give;
@@ -151,7 +153,7 @@ void crowdsale::unwhite(account_name account) {
 }
 
 void crowdsale::finalize(account_name withdraw_to) {
-	eosio_assert(NOW > this->state.finish || this->state.total_tokens + MIN_CONTRIB >= HARD_CAP_TKN, "Crowdsale hasn't finished");
+	eosio_assert(NOW > this->state.finish || this->state.total_tokens + EOS2TKN(MIN_CONTRIB) >= HARD_CAP_TKN, "Crowdsale hasn't finished");
 	eosio_assert(this->state.total_tokens >= SOFT_CAP_TKN, "Softcap not reached");
 
 	require_auth(this->_self);
