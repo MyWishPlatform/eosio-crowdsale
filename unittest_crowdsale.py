@@ -83,6 +83,10 @@ class CrowdsaleTests(unittest.TestCase):
         self.crowdsale_deployer_acc = eosf.account(self.eosio_acc, "ico.deployer")
         self.wallet.import_key(self.crowdsale_deployer_acc)
 
+        # create cold wallet account
+        self.cold_wallet_acc = eosf.account(self.eosio_acc, "cold.wlt")
+        self.wallet.import_key(self.cold_wallet_acc)
+
         # deploy eosio.bios contract
         self.eosio_bios_contract = eosf.Contract(self.eosio_acc, "eosio.bios")
         assert (not self.eosio_bios_contract.error)
@@ -225,7 +229,7 @@ class CrowdsaleTests(unittest.TestCase):
         ).error)
 
     def test_02(self):
-        cprint(".2. Check buy tokens", 'green')
+        cprint("2. Check buy tokens", 'green')
 
         # check that destination accounts has no tokens before initialize
         for x in range(self.mintcnt):
@@ -333,7 +337,7 @@ class CrowdsaleTests(unittest.TestCase):
                                                       .json["rows"][0]["balance"])["amount"] * 10 ** self.decimals))
 
     def test_03(self):
-        cprint(".3. Check buy from several accounts", "green")
+        cprint("3. Check buy from several accounts", "green")
 
         # execute 'init'
         assert (not self.crowdsale_contract.push_action(
@@ -432,7 +436,7 @@ class CrowdsaleTests(unittest.TestCase):
                 break
 
     def test_04(self):
-        cprint(".4. Check white & unwhite", 'green')
+        cprint("4. Check white & unwhite", 'green')
 
         if self.whitelist:
             # execute 'init'
@@ -518,7 +522,7 @@ class CrowdsaleTests(unittest.TestCase):
                 ).error)
 
     def test_05(self):
-        cprint(".5. Check min and max restrictions")
+        cprint("5. Check min and max restrictions")
 
         # execute 'init'
         assert (not self.crowdsale_contract.push_action(
@@ -585,7 +589,7 @@ class CrowdsaleTests(unittest.TestCase):
                 issueAndTransfer(self.max_contrib_eos_cent + 0.0001)
 
     def test_06(self):
-        cprint(".6. Check cannot buy before start and after finish", 'green')
+        cprint("6. Check cannot buy before start and after finish", 'green')
 
         # execute 'init'
         assert (not self.crowdsale_contract.push_action(
@@ -656,6 +660,100 @@ class CrowdsaleTests(unittest.TestCase):
 
         # check that you cannot send EOS after CS end
         set_time_and_transfer(self.finish_date + 10)
+
+    def test_07(self):
+        cprint("7. Check finalization after reaching hard cap", 'green')
+
+        # execute 'init'
+        assert (not self.crowdsale_contract.push_action(
+            "init",
+            json.dumps({}),
+            self.crowdsale_deployer_acc
+        ).error)
+
+        # rewind time to start
+        assert (not self.crowdsale_contract.push_action(
+            "settime",
+            json.dumps({
+                "time": self.start_date
+            }),
+            self.crowdsale_deployer_acc
+        ).error)
+
+        # create account for buyer
+        buyer_acc = eosf.account(self.eosio_acc, "buyer")
+        self.wallet.import_key(buyer_acc)
+
+        # issue tokens to buyer
+        assert (not self.system_token_contract.push_action(
+            "issue",
+            json.dumps({
+                "to": str(buyer_acc),
+                "quantity": self.toAsset(self.hard_cap_eos, 4, "EOS"),
+                "memo": ""
+            }),
+            self.system_token_deployer_acc
+        ).error)
+
+        # whitelist account if needed
+        if self.whitelist:
+            assert (not self.crowdsale_contract.push_action(
+                "white",
+                json.dumps({
+                    "account": str(buyer_acc)
+                }),
+                self.crowdsale_deployer_acc
+            ).error)
+
+        # reach hard cap
+        eos_to_transfer = self.hard_cap_eos
+        if self.max_contrib_eos > 0:
+            eos_to_transfer = self.max_contrib_eos
+            times = int(self.hard_cap_eos / eos_to_transfer)
+            for x in range(times):
+                assert (not self.system_token_contract.push_action(
+                    "transfer",
+                    json.dumps({
+                        "from": str(buyer_acc),
+                        "to": str(self.crowdsale_deployer_acc),
+                        "quantity": self.toAsset(eos_to_transfer, 4, "EOS"),
+                        "memo": ""
+                    }),
+                    buyer_acc
+                ).error)
+
+            remain_eos_to_hard_cap = self.hard_cap_eos - eos_to_transfer * times
+            if remain_eos_to_hard_cap > 0:
+                if remain_eos_to_hard_cap > self.min_contrib_eos or self.min_contrib_eos == 0:
+                    assert (not self.system_token_contract.push_action(
+                        "transfer",
+                        json.dumps({
+                            "from": str(buyer_acc),
+                            "to": str(self.crowdsale_deployer_acc),
+                            "quantity": self.toAsset(remain_eos_to_hard_cap, 4, "EOS"),
+                            "memo": ""
+                        }),
+                        buyer_acc
+                    ).error)
+        else:
+            assert (not self.system_token_contract.push_action(
+                "transfer",
+                json.dumps({
+                    "from": str(buyer_acc),
+                    "to": str(self.crowdsale_deployer_acc),
+                    "quantity": self.toAsset(eos_to_transfer, 4, "EOS"),
+                    "memo": ""
+                }),
+                buyer_acc
+            ).error)
+
+        assert (not self.crowdsale_contract.push_action(
+            "finalize",
+            json.dumps({
+                "withdraw_to": str(self.cold_wallet_acc)
+            }),
+            self.crowdsale_deployer_acc
+        ).error)
 
 
 if __name__ == "__main__":
