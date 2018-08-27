@@ -13,4 +13,4 @@ test:
 	git submodule update
 	make -C eosiotoken
 	mv $(NAME)/crowdsale.abi .
-	python3 unittest_crowdsale.py || mv crowdsale.abi $(NAME)
+	python3 unittest_crowdsale.py ; mv crowdsale.abi $(NAME)

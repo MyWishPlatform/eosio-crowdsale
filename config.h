@@ -24,3 +24,5 @@
 #define MINTVAL3 1250
 #define MINTDEST4 mywishairdr4
 #define MINTVAL4 625
+
+#define DEBUG 1

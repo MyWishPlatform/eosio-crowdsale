@@ -14,18 +14,35 @@ setup.use_keosd(False)
 
 class CrowdsaleTests(unittest.TestCase):
     @classmethod
-    def parseConfig(cls):
-        global cfg
-        cfg = {}
+    def setUpClass(cls):
+        cls.cfg = {}
         with open('config.h', 'r') as cfg_file:
             for line in cfg_file.readlines():
                 match = re.search('#define (\w+) ([\w.]+)', line)
                 if match:
-                    cfg[match.group(1)] = match.group(2)
+                    cls.cfg[match.group(1)] = match.group(2)
 
-    @classmethod
-    def setUpClass(cls):
-        cls.parseConfig()
+        cls.symbol = cls.cfg["SYMBOL"]
+        cls.decimals = int(cls.cfg["DECIMALS"])
+        cls.whitelist = bool(cls.cfg["WHITELIST"])
+        cls.transferable = bool(cls.cfg["TRANSFERABLE"])
+        cls.rate = int(cls.cfg["RATE"]) / int(cls.cfg["RATE_DENOM"])
+        cls.min_contrib_eos_cent = int(cls.cfg["MIN_CONTRIB"])
+        cls.min_contrib_eos = cls.min_contrib_eos_cent / 10 ** 4
+        cls.max_contrib_eos_cent = int(cls.cfg["MAX_CONTRIB"])
+        cls.max_contrib_eos = cls.max_contrib_eos_cent / 10 ** 4
+        cls.soft_cap_tkn_cent = int(cls.cfg["SOFT_CAP_TKN"])
+        cls.soft_cap_tkn = cls.soft_cap_tkn_cent / 10 ** cls.decimals
+        cls.soft_cap_eos_cent = int(cls.soft_cap_tkn / cls.rate * 10 ** 4)
+        cls.soft_cap_eos = cls.soft_cap_eos_cent / 10 ** 4
+        cls.hard_cap_tkn_cent = int(cls.cfg["HARD_CAP_TKN"])
+        cls.hard_cap_tkn = cls.hard_cap_tkn_cent / 10 ** cls.decimals
+        cls.hard_cap_eos_cent = int(cls.hard_cap_tkn / cls.rate * 10 ** 4)
+        cls.hard_cap_eos = cls.hard_cap_eos_cent / 10 ** 4
+        cls.start_date = int(cls.cfg["START_DATE"])
+        cls.finish_date = int(cls.cfg["FINISH_DATE"])
+        cls.token_deployer_acc_name = cls.cfg["CONTRACT"]
+        cls.mintcnt = int(cls.cfg["MINTCNT"])
 
     @classmethod
     def tearDownClass(cls):
@@ -50,15 +67,15 @@ class CrowdsaleTests(unittest.TestCase):
         eosf.set_verbosity()  # enable logs
 
         # create MINTDEST accounts
-        for x in range(int(cfg["MINTCNT"])):
-            self.wallet.import_key(eosf.account(self.eosio_acc, cfg["MINTDEST" + str(x)]))
+        for x in range(self.mintcnt):
+            self.wallet.import_key(eosf.account(self.eosio_acc, self.cfg["MINTDEST" + str(x)]))
 
         # create system token deployer account
         self.system_token_deployer_acc = eosf.account(self.eosio_acc, "eosio.token")
         self.wallet.import_key(self.system_token_deployer_acc)
 
         # create token deployer account
-        self.token_deployer_acc = eosf.account(self.eosio_acc, cfg["CONTRACT"])
+        self.token_deployer_acc = eosf.account(self.eosio_acc, self.token_deployer_acc_name)
         self.wallet.import_key(self.token_deployer_acc)
 
         # create crowdsale deployer account
@@ -95,21 +112,24 @@ class CrowdsaleTests(unittest.TestCase):
             "create",
             json.dumps({
                 "issuer": str(self.system_token_deployer_acc),
-                "maximum_supply": "1009410066.0000 EOS"
+                "maximum_supply": self.toAsset(1009410066, 4, 'EOS'),
+                "lock": not self.transferable
             }),
             self.system_token_deployer_acc
         ).error)
 
         # create custom token asset
-        max_supply = int(cfg["HARD_CAP_TKN"])
-        for x in range(int(cfg["MINTCNT"])):
-            max_supply += int(cfg["MINTVAL" + str(x)])
-        max_supply /= 10 ** int(cfg["DECIMALS"])
+        max_supply = self.hard_cap_tkn_cent
+        for x in range(self.mintcnt):
+            max_supply += int(self.cfg["MINTVAL" + str(x)])
+        max_supply /= 10 ** self.decimals
+
         assert (not self.token_contract.push_action(
             "create",
             json.dumps({
                 "issuer": str(self.crowdsale_deployer_acc),
-                "maximum_supply": str(max_supply) + " " + cfg["SYMBOL"]
+                "maximum_supply": self.toAsset(max_supply, self.decimals, self.symbol),
+                "lock": not self.transferable
             }),
             self.token_deployer_acc
         ).error)
@@ -119,7 +139,7 @@ class CrowdsaleTests(unittest.TestCase):
             self.crowdsale_deployer_acc,
             "eosio-crowdsale/crowdsale",
             wast_file='crowdsale.wast',
-            abi_file='crowdsale.abi'
+            abi_file='crowdsale.debug.abi'
         )
         assert (not self.crowdsale_contract.error)
         deployment_crowdsale = self.crowdsale_contract.deploy()
@@ -177,8 +197,8 @@ class CrowdsaleTests(unittest.TestCase):
         cprint(".1. Check premint", 'green')
 
         # check that destination accounts has no tokens before initialize
-        for x in range(int(cfg["MINTCNT"])):
-            assert (len(self.token_contract.table("accounts", cfg["MINTDEST" + str(x)]).json["rows"]) == 0)
+        for x in range(self.mintcnt):
+            assert (len(self.token_contract.table("accounts", self.cfg["MINTDEST" + str(x)]).json["rows"]) == 0)
 
         # execute 'init'
         assert (not self.crowdsale_contract.push_action(
@@ -188,12 +208,12 @@ class CrowdsaleTests(unittest.TestCase):
         ).error)
 
         # check that destination addresses received their tokens after 'init'
-        for x in range(int(cfg["MINTCNT"])):
-            expected_value = int(cfg["MINTVAL" + str(x)]) / 10 ** int(cfg["DECIMALS"])
+        for x in range(self.mintcnt):
+            expected_value = int(self.cfg["MINTVAL" + str(x)]) / 10 ** self.decimals
             real_value_with_symbol = self.token_contract \
-                .table("accounts", cfg["MINTDEST" + str(x)]) \
+                .table("accounts", self.cfg["MINTDEST" + str(x)]) \
                 .json["rows"][0]["balance"]
-            real_value = float(real_value_with_symbol[:-(len(cfg['SYMBOL']) + 1)])
+            real_value = float(real_value_with_symbol[:-(len(self.symbol) + 1)])
             assert (expected_value == real_value)
 
         # check that you cannot execute 'init' second time
@@ -208,8 +228,8 @@ class CrowdsaleTests(unittest.TestCase):
         cprint("2. Check buy tokens", 'green')
 
         # check that destination accounts has no tokens before initialize
-        for x in range(int(cfg["MINTCNT"])):
-            assert (len(self.token_contract.table("accounts", cfg["MINTDEST" + str(x)]).json["rows"]) == 0)
+        for x in range(self.mintcnt):
+            assert (len(self.token_contract.table("accounts", self.cfg["MINTDEST" + str(x)]).json["rows"]) == 0)
 
         # execute 'init'
         assert (not self.crowdsale_contract.push_action(
@@ -218,18 +238,25 @@ class CrowdsaleTests(unittest.TestCase):
             self.crowdsale_deployer_acc
         ).error)
 
+        # rewind time to start
+        assert (not self.crowdsale_contract.push_action(
+            "settime",
+            json.dumps({
+                "time": self.start_date
+            }),
+            self.crowdsale_deployer_acc
+        ).error)
+
         # create account for buyer
         buyer_acc = eosf.account(self.eosio_acc, "buyer")
         self.wallet.import_key(buyer_acc)
 
         # calculate how much EOS to send
-        min_contrib = int(cfg["MIN_CONTRIB"]) / 10 ** 4
-        max_contrib = int(cfg["MAX_CONTRIB"]) / 10 ** 4
         eos_to_transfer = 10
-        if eos_to_transfer < min_contrib:
-            eos_to_transfer = min_contrib
-        elif eos_to_transfer > max_contrib:
-            eos_to_transfer = max_contrib
+        if eos_to_transfer < self.min_contrib_eos:
+            eos_to_transfer = self.min_contrib_eos
+        elif eos_to_transfer > self.max_contrib_eos:
+            eos_to_transfer = self.max_contrib_eos
 
         # issue tokens to buyer
         eos_to_issue = eos_to_transfer + 50
@@ -245,7 +272,7 @@ class CrowdsaleTests(unittest.TestCase):
         assert (eos_to_issue == int(self.fromAsset(self.system_token_contract.table("accounts", buyer_acc)
                                                    .json["rows"][0]["balance"])["amount"]))
 
-        if bool(cfg["WHITELIST"]):
+        if self.whitelist:
             # check that not whitelisted user cannot send EOS to contract
             assert (self.system_token_contract.push_action(
                 "transfer",
@@ -289,19 +316,21 @@ class CrowdsaleTests(unittest.TestCase):
 
         # check state in crowdsale
         deposit = self.crowdsale_contract.table("deposit", self.crowdsale_deployer_acc).json["rows"][0]
-        expected_tokens = int(eos_to_transfer * int(cfg["RATE"]) / int(cfg["RATE_DENOM"]) * 10 ** int(cfg["DECIMALS"]))
+        expected_tokens = int(eos_to_transfer * self.rate * 10 ** self.decimals)
+
         assert (deposit["account"] == buyer_acc.name)
-        assert (deposit["amount"] == eos_to_transfer * 10 ** 4)
+        assert (deposit["eoses"] == eos_to_transfer * 10 ** 4)
         assert (deposit["tokens"] == expected_tokens)
-        if bool(cfg["WHITELIST"]):
+        if self.whitelist:
             assert (buyer_acc.name == self.crowdsale_contract.table("whitelist", self.crowdsale_deployer_acc)
-                    .json["rows"][0]["account"])  # if whitelist is enabled
+                    .json["rows"][0]["account"])
+
         assert (expected_tokens == self.crowdsale_contract
                 .table("state", self.crowdsale_deployer_acc).json["rows"][0]["total_tokens"])
 
         # check token balance
         assert (expected_tokens == int(self.fromAsset(self.token_contract.table("accounts", buyer_acc)
-                                                      .json["rows"][0]["balance"])["amount"]))
+                                                      .json["rows"][0]["balance"])["amount"] * 10 ** self.decimals))
 
     def test_03(self):
         cprint("3. Check buy from several accounts", "green")
@@ -313,6 +342,15 @@ class CrowdsaleTests(unittest.TestCase):
             self.crowdsale_deployer_acc
         ).error)
 
+        # rewind time to start
+        assert (not self.crowdsale_contract.push_action(
+            "settime",
+            json.dumps({
+                "time": self.start_date
+            }),
+            self.crowdsale_deployer_acc
+        ).error)
+
         # create accounts for buyers
         buyers_accs = []
         for x in range(4):
@@ -320,13 +358,11 @@ class CrowdsaleTests(unittest.TestCase):
             self.wallet.import_key(buyers_accs[x])
 
         # calculate how much EOS to send
-        min_contrib = int(cfg["MIN_CONTRIB"]) / 10 ** 4
-        max_contrib = int(cfg["MAX_CONTRIB"]) / 10 ** 4
         eos_to_transfer = 1
-        if eos_to_transfer < min_contrib:
-            eos_to_transfer = min_contrib
-        elif eos_to_transfer > max_contrib:
-            eos_to_transfer = max_contrib
+        if eos_to_transfer < self.min_contrib_eos:
+            eos_to_transfer = self.min_contrib_eos
+        elif eos_to_transfer > self.max_contrib_eos:
+            eos_to_transfer = self.max_contrib_eos
 
         # issue tokens to buyers
         eos_to_issue = eos_to_transfer + 1
@@ -345,7 +381,7 @@ class CrowdsaleTests(unittest.TestCase):
                                                        .json["rows"][0]["balance"])["amount"]))
 
         # whitelist accounts if needed
-        if bool(cfg["WHITELIST"]):
+        if self.whitelist:
             for buyer in buyers_accs:
                 assert (not self.crowdsale_contract.push_action(
                     "white",
@@ -356,15 +392,13 @@ class CrowdsaleTests(unittest.TestCase):
                 ).error)
 
         # calculate how much tokens each buyer will receive
-        expected_tokens_per_buyer = int(eos_to_transfer
-                                        * int(cfg["RATE"]) / int(cfg["RATE_DENOM"])
-                                        * 10 ** int(cfg["DECIMALS"]))
+        expected_tokens_per_buyer = int(eos_to_transfer * self.rate * 10 ** self.decimals)
         expected_all_tokens = 0
         expected_all_eos = 0
 
         # transfer EOS to crowdsale contract
         for buyer in buyers_accs:
-            if (expected_all_tokens + expected_tokens_per_buyer) <= int(cfg["HARD_CAP_TKN"]):
+            if (expected_all_tokens + expected_tokens_per_buyer) <= self.hard_cap_tkn_cent:
                 assert (not self.system_token_contract.push_action(
                     "transfer",
                     json.dumps({
@@ -389,7 +423,8 @@ class CrowdsaleTests(unittest.TestCase):
                 # check token balances
                 assert (expected_tokens_per_buyer == int(self.fromAsset(self.token_contract
                                                                         .table("accounts", buyer)
-                                                                        .json["rows"][0]["balance"])["amount"]))
+                                                                        .json["rows"][0]["balance"])
+                                                         ["amount"] * 10 ** self.decimals))
                 assert (expected_all_tokens == self.crowdsale_contract
                         .table("state", self.crowdsale_deployer_acc)
                         .json["rows"][0]["total_tokens"])
@@ -399,7 +434,23 @@ class CrowdsaleTests(unittest.TestCase):
     def test_04(self):
         cprint("4. Check white & unwhite", 'green')
 
-        if bool(cfg["WHITELIST"]):
+        if self.whitelist:
+            # execute 'init'
+            assert (not self.crowdsale_contract.push_action(
+                "init",
+                json.dumps({}),
+                self.crowdsale_deployer_acc
+            ).error)
+
+            # rewind time to start
+            assert (not self.crowdsale_contract.push_action(
+                "settime",
+                json.dumps({
+                    "time": self.start_date
+                }),
+                self.crowdsale_deployer_acc
+            ).error)
+
             # create accounts
             buyers_accs = []
             for x in range(4):
@@ -434,13 +485,24 @@ class CrowdsaleTests(unittest.TestCase):
             assert (len(self.crowdsale_contract.table("whitelist", self.crowdsale_deployer_acc).json["rows"]) == 0)
 
             # calculate how much EOS to send
-            min_contrib = int(cfg["MIN_CONTRIB"]) / 10 ** 4
-            max_contrib = int(cfg["MAX_CONTRIB"]) / 10 ** 4
             eos_to_transfer = 1
-            if eos_to_transfer < min_contrib:
-                eos_to_transfer = min_contrib
-            elif eos_to_transfer > max_contrib:
-                eos_to_transfer = max_contrib
+            if eos_to_transfer < self.min_contrib_eos:
+                eos_to_transfer = self.min_contrib_eos
+            elif eos_to_transfer > self.max_contrib_eos:
+                eos_to_transfer = self.max_contrib_eos
+
+            # issue tokens to buyers
+            eos_to_issue = eos_to_transfer + 1
+            for buyer in buyers_accs:
+                assert (not self.system_token_contract.push_action(
+                    "issue",
+                    json.dumps({
+                        "to": str(buyer),
+                        "quantity": self.toAsset(eos_to_issue, 4, "EOS"),
+                        "memo": ""
+                    }),
+                    self.system_token_deployer_acc
+                ).error)
 
             # check that unwhited users cannot send EOS to crowdsale
             for buyer in buyers_accs:
