@@ -56,6 +56,9 @@ private:
 			.start = START_DATE,
 			.finish = FINISH_DATE,
 			.inline_call = 0,
+#ifdef DEBUG
+			.time = 0
+#endif
 		};
 	}
 

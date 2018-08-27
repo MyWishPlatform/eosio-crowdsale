@@ -10,8 +10,8 @@
       "name": "state_t",
       "base": "",
       "fields": [{
-          "name": "finalized",
-          "type": "bool"
+          "name": "total_eoses",
+          "type": "int64"
         },{
           "name": "total_tokens",
           "type": "int64"
