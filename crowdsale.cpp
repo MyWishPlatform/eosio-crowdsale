@@ -22,7 +22,7 @@ crowdsale::crowdsale(account_name self) :
 		eosio::asset(0, eosio::string_to_symbol(DECIMALS, STR(SYMBOL))),
 		eosio::string_to_name(STR(CONTRACT))
 	),
-	issuer(eosio::string_to_name(ISSUER)),
+	issuer(eosio::string_to_name(STR(ISSUER))),
 	state(state_singleton.exists() ? state_singleton.get() : default_parameters())
 {
 }
