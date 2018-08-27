@@ -100,7 +100,7 @@ public:
 	void init(time_t start, time_t finish);
 	void white(account_name account);
 	void unwhite(account_name account);
-	void finalize(account_name withdraw_to);
+	void finalize();
 	void withdraw();
 	void refund(account_name investor);
 #ifdef DEBUG
