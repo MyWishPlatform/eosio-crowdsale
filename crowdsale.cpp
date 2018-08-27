@@ -151,7 +151,7 @@ void crowdsale::unwhite(account_name account) {
 }
 
 void crowdsale::finalize(account_name withdraw_to) {
-	eosio_assert(NOW > this->state.finish || this->state.total_tokens >= HARD_CAP_TKN, "Crowdsale hasn't finished");
+	eosio_assert(NOW > this->state.finish || this->state.total_tokens + MIN_CONTRIB >= HARD_CAP_TKN, "Crowdsale hasn't finished");
 	eosio_assert(this->state.total_tokens >= SOFT_CAP_TKN, "Softcap not reached");
 
 	require_auth(this->_self);
