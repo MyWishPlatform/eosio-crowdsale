@@ -102,6 +102,7 @@ void crowdsale::init(time_t start, time_t finish) {
 }
 
 void crowdsale::setfinish(time_t finish) {
+	eosio_assert(NOW <= this->state.finish, "Crowdsale finished");
 	require_auth(this->issuer);
 	this->state.finish = finish;
 }
