@@ -517,6 +517,73 @@ class CrowdsaleTests(unittest.TestCase):
                     buyer
                 ).error)
 
+    def test_05(self):
+        cprint("5. Check min and max restrictions")
+
+        # execute 'init'
+        assert (not self.crowdsale_contract.push_action(
+            "init",
+            json.dumps({}),
+            self.crowdsale_deployer_acc
+        ).error)
+
+        # rewind time to start
+        assert (not self.crowdsale_contract.push_action(
+            "settime",
+            json.dumps({
+                "time": self.start_date
+            }),
+            self.crowdsale_deployer_acc
+        ).error)
+
+        # create account for buyer
+        buyer_acc = eosf.account(self.eosio_acc, "buyer")
+        self.wallet.import_key(buyer_acc)
+
+        if self.min_contrib_eos_cent != 0 and self.min_contrib_eos_cent > 1 \
+                or self.max_contrib_eos_cent != 0 and self.max_contrib_eos_cent < self.hard_cap_eos_cent:
+            if self.whitelist:
+                # whitelist account if needed
+                assert (not self.crowdsale_contract.push_action(
+                    "white",
+                    json.dumps({
+                        "account": str(buyer_acc)
+                    }),
+                    self.crowdsale_deployer_acc
+                ).error)
+
+            def issueAndTransfer(eos_to_transfer):
+                # issue tokens to buyer
+                assert (not self.system_token_contract.push_action(
+                    "issue",
+                    json.dumps({
+                        "to": str(buyer_acc),
+                        "quantity": self.toAsset(eos_to_transfer, 4, "EOS"),
+                        "memo": ""
+                    }),
+                    self.system_token_deployer_acc
+                ).error)
+
+                # transfer EOS to crowdsale contract
+                assert (self.system_token_contract.push_action(
+                    "transfer",
+                    json.dumps({
+                        "from": str(buyer_acc),
+                        "to": str(self.crowdsale_deployer_acc),
+                        "quantity": self.toAsset(eos_to_transfer, 4, "EOS"),
+                        "memo": ""
+                    }),
+                    buyer_acc
+                ).error)
+
+            # check that cannot send less than min
+            if self.min_contrib_eos_cent != 0 and self.min_contrib_eos_cent > 1:
+                issueAndTransfer(self.min_contrib_eos / 2)
+
+            # check that cannot send more than max
+            if self.max_contrib_eos_cent != 0 and self.max_contrib_eos_cent < self.hard_cap_eos_cent:
+                issueAndTransfer(self.max_contrib_eos_cent + 0.0001)
+
 
 if __name__ == "__main__":
     unittest.main()
