@@ -99,6 +99,14 @@
           "type": "name"
         }
       ]
+    },{
+      "name": "setfinish",
+      "base": "",
+      "fields": [{
+          "name": "finish",
+          "type": "time_t"
+        }
+      ]
     }
   ],
   "actions": [{
@@ -128,6 +136,10 @@
     },{
       "name": "refund",
       "type": "refund",
+      "ricardian_contract": ""
+    },{
+      "name": "setfinish",
+      "type": "setfinish",
       "ricardian_contract": ""
     }
   ],

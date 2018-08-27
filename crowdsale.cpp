@@ -101,6 +101,11 @@ void crowdsale::init(time_t start, time_t finish) {
 	}
 }
 
+void crowdsale::setfinish(time_t finish) {
+	require_auth(this->issuer);
+	this->state.finish = finish;
+}
+
 void crowdsale::white(account_name account) {
 	require_auth(this->issuer);
 	eosio_assert(WHITELIST, "Whitelist not enabled");
@@ -167,7 +172,7 @@ void crowdsale::refund(account_name investor) {
 void crowdsale::settime(time_t time) {
 	this->state.time = time;
 }
-EOSIO_ABI(crowdsale, (init)(white)(unwhite)(finalize)(withdraw)(refund)(transfer)(settime));
+EOSIO_ABI(crowdsale, (init)(setfinish)(white)(unwhite)(finalize)(withdraw)(refund)(transfer)(settime));
 #else
-EOSIO_ABI(crowdsale, (init)(white)(unwhite)(finalize)(withdraw)(refund)(transfer));
+EOSIO_ABI(crowdsale, (init)(setfinish)(white)(unwhite)(finalize)(withdraw)(refund)(transfer));
 #endif

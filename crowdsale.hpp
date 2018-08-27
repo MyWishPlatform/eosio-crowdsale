@@ -98,6 +98,7 @@ public:
 	~crowdsale();
 	void transfer(uint64_t sender, uint64_t receiver);
 	void init(time_t start, time_t finish);
+	void setfinish(time_t finish);
 	void white(account_name account);
 	void unwhite(account_name account);
 	void finalize();
