@@ -1015,6 +1015,65 @@ class CrowdsaleTests(unittest.TestCase):
             forceUnique=1
         ).error)
 
+    def test_11(self):
+        cprint('11. Check changing start date', 'green')
+
+        # execute 'init'
+        assert (not self.crowdsale_contract.push_action(
+            "init",
+            json.dumps({
+                "start": self.start_date,
+                "finish": self.finish_date
+            }),
+            self.crowdsale_deployer_acc
+        ).error)
+
+        # rewind time to before start
+        assert (not self.crowdsale_contract.push_action(
+            "settime",
+            json.dumps({
+                "time": self.start_date - 10
+            })
+        ).error)
+
+        assert (not self.crowdsale_contract.push_action(
+            "setstart",
+            json.dumps({
+                "start": self.start_date + 10
+            }),
+            self.issuer_acc
+        ).error)
+
+        assert (self.start_date + 10 == self.crowdsale_contract
+                .table("state", self.crowdsale_deployer_acc).json["rows"][0]["start"])
+
+        # change finish date back
+        assert (not self.crowdsale_contract.push_action(
+            "setstart",
+            json.dumps({
+                "start": self.start_date
+            }),
+            self.issuer_acc
+        ).error)
+        assert (self.start_date == self.crowdsale_contract
+                .table("state", self.crowdsale_deployer_acc).json["rows"][0]["start"])
+
+        # try to change finish date after CS finished
+        assert (not self.crowdsale_contract.push_action(
+            "settime",
+            json.dumps({
+                "time": self.start_date + 1
+            })
+        ).error)
+        assert (self.crowdsale_contract.push_action(
+            "setstart",
+            json.dumps({
+                "start": self.start_date
+            }),
+            self.issuer_acc,
+            forceUnique=1
+        ).error)
+
 
 if __name__ == "__main__":
     unittest.main()
