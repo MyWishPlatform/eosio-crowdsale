@@ -189,7 +189,7 @@ class CrowdsaleTests(unittest.TestCase):
         ).error)
 
     def toAsset(self, amount, decimals, symbol):
-        amount = int(amount * 10 ** decimals) / 10 ** decimals
+        amount = ceil(amount * 10 ** decimals) / 10 ** decimals
         return str(Decimal(amount).quantize(Decimal('1.' + '0' * int(decimals)))) + " " + symbol
 
     def fromAsset(self, asset):
@@ -202,7 +202,7 @@ class CrowdsaleTests(unittest.TestCase):
 
     def reach_cap(self, cap_tkn_cent, buyer_acc):
         contributed = 0
-        eos_to_transfer = cap_tkn_cent / 10 ** self.decimals / self.rate + 0.0001
+        eos_to_transfer = cap_tkn_cent / 10 ** self.decimals / self.rate
         if self.max_contrib_eos > 0:
             eos_to_transfer = self.max_contrib_eos
             times = int(cap_tkn_cent / 10 ** self.decimals / self.rate / eos_to_transfer)
@@ -220,11 +220,12 @@ class CrowdsaleTests(unittest.TestCase):
                 ).error)
                 contributed += eos_to_transfer
 
-            remain_eos_to_cap = cap_tkn_cent / 10 ** self.decimals - eos_to_transfer * times
+            remain_eos_to_cap = (cap_tkn_cent - contributed * self.rate * 10 ** self.decimals) \
+                                / 10 ** self.decimals / self.rate
             if remain_eos_to_cap > 0:
                 if remain_eos_to_cap > self.min_contrib_eos or self.min_contrib_eos == 0:
                     if int((contributed + eos_to_transfer) * self.rate * 10 ** self.decimals) > cap_tkn_cent:
-                        eos_to_transfer -= 0.0001
+                        remain_eos_to_cap -= 0.0001
                     assert (not self.system_token_contract.push_action(
                         "transfer",
                         json.dumps({
@@ -237,7 +238,8 @@ class CrowdsaleTests(unittest.TestCase):
                     ).error)
                     contributed += eos_to_transfer
         else:
-            if int(int((contributed + eos_to_transfer) * 10 ** 4) / 10 ** 4 * self.rate * 10 ** self.decimals) > cap_tkn_cent:
+            will_be = int(int((contributed + eos_to_transfer) * 10 ** 4) / 10 ** 4 * self.rate * 10 ** self.decimals)
+            if will_be > cap_tkn_cent:
                 eos_to_transfer -= 0.0001
             assert (not self.system_token_contract.push_action(
                 "transfer",
@@ -772,7 +774,7 @@ class CrowdsaleTests(unittest.TestCase):
             "issue",
             json.dumps({
                 "to": str(buyer_acc),
-                "quantity": self.toAsset(self.hard_cap_eos, 4, "EOS"),
+                "quantity": self.toAsset(self.hard_cap_eos * 2, 4, "EOS"),
                 "memo": ""
             }),
             self.system_token_deployer_acc
