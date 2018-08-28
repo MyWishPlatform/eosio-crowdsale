@@ -179,7 +179,7 @@ void crowdsale::refund(account_name investor) {
 void crowdsale::settime(time_t time) {
 	this->state.time = time;
 }
-EOSIO_ABI(crowdsale, (init)(setfinish)(white)(unwhite)(finalize)(withdraw)(refund)(transfer)(settime));
+EOSIO_ABI(crowdsale, (init)(setstart)(setfinish)(white)(unwhite)(finalize)(withdraw)(refund)(transfer)(settime));
 #else
-EOSIO_ABI(crowdsale, (init)(setfinish)(white)(unwhite)(finalize)(withdraw)(refund)(transfer));
+EOSIO_ABI(crowdsale, (init)(setstart)(setfinish)(white)(unwhite)(finalize)(withdraw)(refund)(transfer));
 #endif
