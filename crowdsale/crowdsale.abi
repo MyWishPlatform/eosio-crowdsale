@@ -100,6 +100,14 @@
         }
       ]
     },{
+      "name": "setstart",
+      "base": "",
+      "fields": [{
+          "name": "start",
+          "type": "time_t"
+        }
+      ]
+    },{
       "name": "setfinish",
       "base": "",
       "fields": [{
@@ -136,6 +144,10 @@
     },{
       "name": "refund",
       "type": "refund",
+      "ricardian_contract": ""
+    },{
+      "name": "setstart",
+      "type": "setstart",
       "ricardian_contract": ""
     },{
       "name": "setfinish",
