@@ -213,7 +213,8 @@ class CrowdsaleTests(unittest.TestCase):
                         "quantity": self.toAsset(eos_to_transfer, 4, "EOS"),
                         "memo": ""
                     }),
-                    buyer_acc
+                    buyer_acc,
+                    forceUnique=1
                 ).error)
 
             remain_eos_to_cap = cap_eos - eos_to_transfer * times
@@ -876,69 +877,70 @@ class CrowdsaleTests(unittest.TestCase):
     def test_09(self):
         cprint('9. Cannot refund after reaching hard cap', 'green')
 
-        # execute 'init'
-        assert (not self.crowdsale_contract.push_action(
-            "init",
-            json.dumps({
-                "start": self.start_date,
-                "finish": self.finish_date
-            }),
-            self.crowdsale_deployer_acc
-        ).error)
-
-        # rewind time to start
-        assert (not self.crowdsale_contract.push_action(
-            "settime",
-            json.dumps({
-                "time": self.start_date
-            }),
-            self.crowdsale_deployer_acc
-        ).error)
-
-        # create account for buyer
-        buyer_acc = eosf.account(self.eosio_acc, "buyer")
-        self.wallet.import_key(buyer_acc)
-
-        # issue tokens to buyer
-        assert (not self.system_token_contract.push_action(
-            "issue",
-            json.dumps({
-                "to": str(buyer_acc),
-                "quantity": self.toAsset(self.hard_cap_eos, 4, "EOS"),
-                "memo": ""
-            }),
-            self.system_token_deployer_acc
-        ).error)
-
-        # whitelist account if needed
-        if self.whitelist:
+        if self.soft_cap_eos + self.min_contrib_eos <= self.hard_cap_eos:
+            # execute 'init'
             assert (not self.crowdsale_contract.push_action(
-                "white",
+                "init",
                 json.dumps({
-                    "account": str(buyer_acc)
+                    "start": self.start_date,
+                    "finish": self.finish_date
                 }),
-                self.issuer_acc
+                self.crowdsale_deployer_acc
             ).error)
 
-        # reach soft cap
-        self.reach_cap((self.hard_cap_eos + self.soft_cap_eos) / 2, buyer_acc)
+            # rewind time to start
+            assert (not self.crowdsale_contract.push_action(
+                "settime",
+                json.dumps({
+                    "time": self.start_date
+                }),
+                self.crowdsale_deployer_acc
+            ).error)
 
-        # rewind time to finish
-        assert (not self.crowdsale_contract.push_action(
-            "settime",
-            json.dumps({
-                "time": self.finish_date + 1
-            }),
-            self.crowdsale_deployer_acc
-        ).error)
+            # create account for buyer
+            buyer_acc = eosf.account(self.eosio_acc, "buyer")
+            self.wallet.import_key(buyer_acc)
 
-        assert (self.crowdsale_contract.push_action(
-            "refund",
-            json.dumps({
-                "investor": str(buyer_acc)
-            }),
-            buyer_acc
-        ).error)
+            # issue tokens to buyer
+            assert (not self.system_token_contract.push_action(
+                "issue",
+                json.dumps({
+                    "to": str(buyer_acc),
+                    "quantity": self.toAsset(self.hard_cap_eos, 4, "EOS"),
+                    "memo": ""
+                }),
+                self.system_token_deployer_acc
+            ).error)
+
+            # whitelist account if needed
+            if self.whitelist:
+                assert (not self.crowdsale_contract.push_action(
+                    "white",
+                    json.dumps({
+                        "account": str(buyer_acc)
+                    }),
+                    self.issuer_acc
+                ).error)
+
+            # reach soft cap
+            self.reach_cap((self.hard_cap_eos + self.soft_cap_eos) / 2, buyer_acc)
+
+            # rewind time to finish
+            assert (not self.crowdsale_contract.push_action(
+                "settime",
+                json.dumps({
+                    "time": self.finish_date + 1
+                }),
+                self.crowdsale_deployer_acc
+            ).error)
+
+            assert (self.crowdsale_contract.push_action(
+                "refund",
+                json.dumps({
+                    "investor": str(buyer_acc)
+                }),
+                buyer_acc
+            ).error)
 
     def test_10(self):
         cprint('10. Check changing finish date', 'green')
