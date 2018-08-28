@@ -940,6 +940,66 @@ class CrowdsaleTests(unittest.TestCase):
             buyer_acc
         ).error)
 
+    def test_10(self):
+        cprint('10. Check changing finish date', 'green')
+
+        # execute 'init'
+        assert (not self.crowdsale_contract.push_action(
+            "init",
+            json.dumps({
+                "start": self.start_date,
+                "finish": self.finish_date
+            }),
+            self.crowdsale_deployer_acc
+        ).error)
+
+        # rewind time to start
+        assert (not self.crowdsale_contract.push_action(
+            "settime",
+            json.dumps({
+                "time": self.start_date
+            }),
+            self.crowdsale_deployer_acc
+        ).error)
+
+        # change finish date
+        assert (not self.crowdsale_contract.push_action(
+            "setfinish",
+            json.dumps({
+                "finish": self.finish_date + 10
+            }),
+            self.issuer_acc
+        ).error)
+        assert (self.finish_date + 10 == self.crowdsale_contract
+                .table("state", self.crowdsale_deployer_acc).json["rows"][0]["finish"])
+
+        # change finish date back
+        assert (not self.crowdsale_contract.push_action(
+            "setfinish",
+            json.dumps({
+                "finish": self.finish_date
+            }),
+            self.issuer_acc
+        ).error)
+        assert (self.finish_date == self.crowdsale_contract
+                .table("state", self.crowdsale_deployer_acc).json["rows"][0]["finish"])
+
+        # try to change finish date after CS finished
+        assert (not self.crowdsale_contract.push_action(
+            "settime",
+            json.dumps({
+                "time": self.finish_date + 1
+            })
+        ).error)
+        assert (self.crowdsale_contract.push_action(
+            "setfinish",
+            json.dumps({
+                "finish": self.finish_date
+            }),
+            self.issuer_acc,
+            forceUnique=1
+        ).error)
+
 
 if __name__ == "__main__":
     unittest.main()
