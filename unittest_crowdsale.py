@@ -202,7 +202,7 @@ class CrowdsaleTests(unittest.TestCase):
 
     def reach_cap(self, cap_tkn_cent, buyer_acc):
         contributed = 0
-        eos_to_transfer = cap_tkn_cent / 10 ** self.decimals / self.rate
+        eos_to_transfer = cap_tkn_cent / 10 ** self.decimals / self.rate + 0.0001
         if self.max_contrib_eos > 0:
             eos_to_transfer = self.max_contrib_eos
             times = int(cap_tkn_cent / 10 ** self.decimals / self.rate / eos_to_transfer)
@@ -237,8 +237,7 @@ class CrowdsaleTests(unittest.TestCase):
                     ).error)
                     contributed += eos_to_transfer
         else:
-            if int((
-                           contributed + eos_to_transfer) * 10 ** 4) / 10 ** 4 * self.rate * 10 ** self.decimals > cap_tkn_cent:
+            if int(int((contributed + eos_to_transfer) * 10 ** 4) / 10 ** 4 * self.rate * 10 ** self.decimals) > cap_tkn_cent:
                 eos_to_transfer -= 0.0001
             assert (not self.system_token_contract.push_action(
                 "transfer",
@@ -253,8 +252,7 @@ class CrowdsaleTests(unittest.TestCase):
             contributed += eos_to_transfer
 
     def tearDown(self):
-        pass
-        # node.stop()
+        node.stop()
 
     def test_01(self):
         cprint(".1. Check premint", 'green')
@@ -846,7 +844,7 @@ class CrowdsaleTests(unittest.TestCase):
                     "issue",
                     json.dumps({
                         "to": str(buyers_accs[x]),
-                        "quantity": self.toAsset(self.soft_cap_eos / 4, 4, "EOS"),
+                        "quantity": self.toAsset(self.soft_cap_eos, 4, "EOS"),
                         "memo": ""
                     }),
                     self.system_token_deployer_acc
@@ -884,7 +882,7 @@ class CrowdsaleTests(unittest.TestCase):
                     buyer
                 ).error)
 
-                assert (self.toAsset(self.soft_cap_eos / 4, 4, "EOS") == self.system_token_contract
+                assert (self.toAsset(self.soft_cap_eos, 4, "EOS") == self.system_token_contract
                         .table("accounts", buyer).json["rows"][0]["balance"])
 
     def test_09(self):
