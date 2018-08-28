@@ -132,7 +132,7 @@ void crowdsale::unwhite(account_name account) {
 }
 
 void crowdsale::finalize() {
-	eosio_assert(NOW > this->state.finish || this->state.total_tokens + EOS2TKN(MIN_CONTRIB) >= HARD_CAP_TKN, "Crowdsale hasn't finished");
+	eosio_assert(NOW > this->state.finish || this->state.total_tokens + EOS2TKN(MIN_CONTRIB + 1) >= HARD_CAP_TKN, "Crowdsale hasn't finished");
 	eosio_assert(this->state.total_tokens >= SOFT_CAP_TKN, "Softcap not reached");
 	eosio_assert(!TRANSFERABLE, "There is no reason to call finalize");
 
