@@ -13,7 +13,7 @@ BYTECODE=`echo $BYTECODE | tr -d " "`
 ABI=`$tcleos set abi eosio $3 -jds 2>/dev/null | grep \"data\"`
 ABI=${ABI:15:-1}
 
-source trx.cfg
+source deploy.cfg
 
 function newaccount() {
 	echo '	{
