@@ -1,7 +1,7 @@
 #include "crowdsale.hpp"
 #include "override.hpp"
 
-#define EOS2TKN(EOS) (int64_t)(EOS * POW10(DECIMALS) * RATE / (1.0 * POW10(4) * RATE_DENOM))
+#define EOS2TKN(EOS) (int64_t)((EOS) * POW10(DECIMALS) * RATE / (1.0 * POW10(4) * RATE_DENOM))
 
 #ifdef DEBUG
 #define NOW this->state.time
