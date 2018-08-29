@@ -397,8 +397,8 @@ class CrowdsaleTests(unittest.TestCase):
             assert (buyer_acc.name == self.crowdsale_contract.table("whitelist", self.crowdsale_deployer_acc)
                     .json["rows"][0]["account"])
 
-        assert (expected_tokens == self.crowdsale_contract
-                .table("state", self.crowdsale_deployer_acc).json["rows"][0]["total_tokens"])
+        assert (expected_tokens == int(self.crowdsale_contract
+                .table("state", self.crowdsale_deployer_acc).json["rows"][0]["total_tokens"]))
 
         # check token balance
         assert (expected_tokens == int(self.fromAsset(self.token_contract.table("accounts", buyer_acc)
@@ -502,9 +502,9 @@ class CrowdsaleTests(unittest.TestCase):
                                                                         .table("accounts", buyer)
                                                                         .json["rows"][0]["balance"])
                                                          ["amount"] * 10 ** self.decimals))
-                assert (expected_all_tokens == self.crowdsale_contract
+                assert (expected_all_tokens == int(self.crowdsale_contract
                         .table("state", self.crowdsale_deployer_acc)
-                        .json["rows"][0]["total_tokens"])
+                        .json["rows"][0]["total_tokens"]))
             else:
                 break
 
