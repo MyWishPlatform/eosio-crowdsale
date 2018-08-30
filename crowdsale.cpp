@@ -131,6 +131,28 @@ void crowdsale::unwhite(account_name account) {
 	whitelist.erase(it);
 }
 
+void crowdsale::whitemany(eosio::vector<account_name> accounts) {
+	require_auth(this->issuer);
+	eosio_assert(WHITELIST, "Whitelist not enabled");
+	for (account_name account : accounts) {
+		auto it = this->whitelist.find(account);
+		eosio_assert(it == this->whitelist.end(), "Account already whitelisted");
+		this->whitelist.emplace(this->_self, [account](auto& e) {
+			e.account = account;
+		});
+	}
+}
+
+void crowdsale::unwhitemany(eosio::vector<account_name> accounts) {
+	require_auth(this->issuer);
+	eosio_assert(WHITELIST, "Whitelist not enabled");
+	for (account_name account : accounts) {
+		auto it = this->whitelist.find(account);
+		eosio_assert(it != this->whitelist.end(), "Account not whitelisted");
+		whitelist.erase(it);
+	}
+}
+
 void crowdsale::finalize() {
 	eosio_assert(NOW > this->state.finish || this->state.total_tokens + EOS2TKN(MIN_CONTRIB + !MIN_CONTRIB) >= HARD_CAP_TKN, "Crowdsale hasn't finished");
 	eosio_assert(this->state.total_tokens >= SOFT_CAP_TKN, "Softcap not reached");
@@ -179,7 +201,7 @@ void crowdsale::refund(account_name investor) {
 void crowdsale::settime(time_t time) {
 	this->state.time = time;
 }
-EOSIO_ABI(crowdsale, (init)(setstart)(setfinish)(white)(unwhite)(finalize)(withdraw)(refund)(transfer)(settime));
+EOSIO_ABI(crowdsale, (init)(setstart)(setfinish)(white)(unwhite)(whitemany)(unwhitemany)(finalize)(withdraw)(refund)(transfer)(settime));
 #else
-EOSIO_ABI(crowdsale, (init)(setstart)(setfinish)(white)(unwhite)(finalize)(withdraw)(refund)(transfer));
+EOSIO_ABI(crowdsale, (init)(setstart)(setfinish)(white)(unwhite)(whitemany)(unwhitemany)(finalize)(withdraw)(refund)(transfer));
 #endif

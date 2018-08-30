@@ -102,6 +102,8 @@ public:
 	void setfinish(time_t finish);
 	void white(account_name account);
 	void unwhite(account_name account);
+	void whitemany(eosio::vector<account_name> accounts);
+	void unwhitemany(eosio::vector<account_name> accounts);
 	void finalize();
 	void withdraw();
 	void refund(account_name investor);
