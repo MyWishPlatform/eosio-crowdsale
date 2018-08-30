@@ -93,6 +93,20 @@ private:
 		).send();
 	}
 
+	void setwhite(account_name account) {
+		auto it = this->whitelist.find(account);
+		eosio_assert(it == this->whitelist.end(), "Account already whitelisted");
+		this->whitelist.emplace(this->_self, [account](auto& e) {
+			e.account = account;
+		});
+	}
+
+	void unsetwhite(account_name account) {
+		auto it = this->whitelist.find(account);
+		eosio_assert(it != this->whitelist.end(), "Account not whitelisted");
+		whitelist.erase(it);
+	}
+
 public:
 	crowdsale(account_name self);
 	~crowdsale();

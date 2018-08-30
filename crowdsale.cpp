@@ -116,30 +116,20 @@ void crowdsale::setfinish(time_t finish) {
 void crowdsale::white(account_name account) {
 	require_auth(this->issuer);
 	eosio_assert(WHITELIST, "Whitelist not enabled");
-	auto it = this->whitelist.find(account);
-	eosio_assert(it == this->whitelist.end(), "Account already whitelisted");
-	this->whitelist.emplace(this->_self, [account](auto& e) {
-		e.account = account;
-	});
+	this->setwhite(account);
 }
 
 void crowdsale::unwhite(account_name account) {
 	require_auth(this->issuer);
 	eosio_assert(WHITELIST, "Whitelist not enabled");
-	auto it = this->whitelist.find(account);
-	eosio_assert(it != this->whitelist.end(), "Account not whitelisted");
-	whitelist.erase(it);
+	this->unsetwhite(account);
 }
 
 void crowdsale::whitemany(eosio::vector<account_name> accounts) {
 	require_auth(this->issuer);
 	eosio_assert(WHITELIST, "Whitelist not enabled");
 	for (account_name account : accounts) {
-		auto it = this->whitelist.find(account);
-		eosio_assert(it == this->whitelist.end(), "Account already whitelisted");
-		this->whitelist.emplace(this->_self, [account](auto& e) {
-			e.account = account;
-		});
+		this->setwhite(account);
 	}
 }
 
@@ -147,9 +137,7 @@ void crowdsale::unwhitemany(eosio::vector<account_name> accounts) {
 	require_auth(this->issuer);
 	eosio_assert(WHITELIST, "Whitelist not enabled");
 	for (account_name account : accounts) {
-		auto it = this->whitelist.find(account);
-		eosio_assert(it != this->whitelist.end(), "Account not whitelisted");
-		whitelist.erase(it);
+		this->unsetwhite(account);
 	}
 }
 
