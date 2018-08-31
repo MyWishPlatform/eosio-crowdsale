@@ -84,6 +84,22 @@
         }
       ]
     },{
+      "name": "whitemany",
+      "base": "",
+      "fields": [{
+          "name": "accounts",
+          "type": "name[]"
+        }
+      ]
+    },{
+      "name": "unwhitemany",
+      "base": "",
+      "fields": [{
+          "name": "accounts",
+          "type": "name[]"
+        }
+      ]
+    },{
       "name": "finalize",
       "base": "",
       "fields": []
@@ -132,6 +148,14 @@
     },{
       "name": "unwhite",
       "type": "unwhite",
+      "ricardian_contract": ""
+    },{
+      "name": "whitemany",
+      "type": "whitemany",
+      "ricardian_contract": ""
+    },{
+      "name": "unwhitemany",
+      "type": "unwhitemany",
       "ricardian_contract": ""
     },{
       "name": "finalize",
