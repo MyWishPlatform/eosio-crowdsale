@@ -665,7 +665,7 @@ class CrowdsaleTests(unittest.TestCase):
 
             # check that cannot send more than max
             if self.max_contrib_eos_cent != 0 and self.max_contrib_eos_cent < self.hard_cap_eos_cent:
-                issueAndTransfer(self.max_contrib_eos_cent + 0.0001)
+                issueAndTransfer(self.max_contrib_eos + 0.0001)
 
     def test_06(self):
         cprint("6. Check cannot buy before start and after finish", 'green')
