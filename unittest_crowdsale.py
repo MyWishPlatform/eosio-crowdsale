@@ -122,7 +122,7 @@ class CrowdsaleTests(unittest.TestCase):
             "create",
             json.dumps({
                 "issuer": str(self.system_token_deployer_acc),
-                "maximum_supply": self.toAsset(1009410066, 4, 'EOS')
+                "maximum_supply": self.toAsset(460000000000000, 4, 'EOS')
             }),
             self.system_token_deployer_acc
         ).error)
@@ -861,7 +861,7 @@ class CrowdsaleTests(unittest.TestCase):
             "issue",
             json.dumps({
                 "to": str(buyer_acc),
-                "quantity": self.toAsset(self.hard_cap_eos * 2, 4, "EOS"),
+                "quantity": self.toAsset(self.hard_cap_eos, 4, "EOS"),
                 "memo": ""
             }),
             self.system_token_deployer_acc
