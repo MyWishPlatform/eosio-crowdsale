@@ -598,7 +598,94 @@ class CrowdsaleTests(unittest.TestCase):
                 ).error)
 
     def test_05(self):
-        cprint("5. Check min and max restrictions", 'green')
+        cprint("5. Check whitemany & unwhitemany", 'green')
+
+        if self.whitelist:
+            # execute 'init'
+            assert (not self.crowdsale_contract.push_action(
+                "init",
+                json.dumps({
+                    "start": self.start_date,
+                    "finish": self.finish_date
+                }),
+                self.crowdsale_deployer_acc
+            ).error)
+
+            # rewind time to start
+            assert (not self.crowdsale_contract.push_action(
+                "settime",
+                json.dumps({
+                    "time": self.start_date
+                }),
+                self.crowdsale_deployer_acc
+            ).error)
+
+            # create accounts
+            buyers_accs = []
+            for x in range(4):
+                buyers_accs.append(eosf.account(self.eosio_acc, "buyer" + str(x + 1)))
+                self.wallet.import_key(buyers_accs[x])
+
+            # whitelist all buyers
+            assert (not self.crowdsale_contract.push_action(
+                "whitemany",
+                json.dumps({
+                    "accounts": list(map(lambda buyer: buyer.name, buyers_accs))
+                }),
+                self.issuer_acc
+            ).error)
+
+            # check that all buyers successfully whitelisted
+            buyers_names = list(map(lambda buyer: buyer.name, buyers_accs))
+            whitelisted_names = list(map(lambda row: row["account"], self.crowdsale_contract
+                                         .table("whitelist", self.crowdsale_deployer_acc).json["rows"]))
+            assert (buyers_names == whitelisted_names)
+
+            # unwhite all buyers
+            assert (not self.crowdsale_contract.push_action(
+                "unwhitemany",
+                json.dumps({
+                    "accounts": list(map(lambda buyer: buyer.name, buyers_accs))
+                }),
+                self.issuer_acc
+            ).error)
+            assert (len(self.crowdsale_contract.table("whitelist", self.crowdsale_deployer_acc).json["rows"]) == 0)
+
+            # calculate how much EOS to send
+            eos_to_transfer = self.soft_cap_eos
+            if eos_to_transfer < self.min_contrib_eos:
+                eos_to_transfer = self.min_contrib_eos
+            elif eos_to_transfer > self.max_contrib_eos != 0:
+                eos_to_transfer = self.max_contrib_eos
+
+            # issue tokens to buyers
+            eos_to_issue = eos_to_transfer + 1
+            for buyer in buyers_accs:
+                assert (not self.system_token_contract.push_action(
+                    "issue",
+                    json.dumps({
+                        "to": str(buyer),
+                        "quantity": self.toAsset(eos_to_issue, 4, "EOS"),
+                        "memo": ""
+                    }),
+                    self.system_token_deployer_acc
+                ).error)
+
+            # check that unwhited users cannot send EOS to crowdsale
+            for buyer in buyers_accs:
+                assert (self.system_token_contract.push_action(
+                    "transfer",
+                    json.dumps({
+                        "from": str(buyer),
+                        "to": str(self.crowdsale_deployer_acc),
+                        "quantity": self.toAsset(eos_to_transfer, 4, "EOS"),
+                        "memo": ""
+                    }),
+                    buyer
+                ).error)
+
+    def test_06(self):
+        cprint("6. Check min and max restrictions", 'green')
 
         # execute 'init'
         assert (not self.crowdsale_contract.push_action(
@@ -667,8 +754,8 @@ class CrowdsaleTests(unittest.TestCase):
             if self.max_contrib_eos_cent != 0 and self.max_contrib_eos_cent < self.hard_cap_eos_cent:
                 issueAndTransfer(self.max_contrib_eos + 0.0001)
 
-    def test_06(self):
-        cprint("6. Check cannot buy before start and after finish", 'green')
+    def test_07(self):
+        cprint("7. Check cannot buy before start and after finish", 'green')
 
         # execute 'init'
         assert (not self.crowdsale_contract.push_action(
@@ -743,8 +830,8 @@ class CrowdsaleTests(unittest.TestCase):
         # check that you cannot send EOS after CS end
         set_time_and_transfer(self.finish_date + 10)
 
-    def test_07(self):
-        cprint("7. Check finalization after reaching hard cap", 'green')
+    def test_08(self):
+        cprint("8. Check finalization after reaching hard cap", 'green')
 
         # execute 'init'
         assert (not self.crowdsale_contract.push_action(
@@ -812,8 +899,8 @@ class CrowdsaleTests(unittest.TestCase):
         eos_at_issuer_acc = self.system_token_contract.table("accounts", self.issuer_acc).json["rows"][0]
         assert (eos_at_crowdsale == eos_at_issuer_acc)
 
-    def test_08(self):
-        cprint('8. Check refund from multiple accounts', 'green')
+    def test_09(self):
+        cprint('9. Check refund from multiple accounts', 'green')
 
         if self.soft_cap_eos > 0:
             # execute 'init'
@@ -887,8 +974,8 @@ class CrowdsaleTests(unittest.TestCase):
                 assert (self.toAsset(self.soft_cap_eos, 4, "EOS") == self.system_token_contract
                         .table("accounts", buyer).json["rows"][0]["balance"])
 
-    def test_09(self):
-        cprint('9. Cannot refund after reaching hard cap', 'green')
+    def test_10(self):
+        cprint('10. Cannot refund after reaching hard cap', 'green')
 
         if self.soft_cap_eos + self.min_contrib_eos <= self.hard_cap_eos:
             # execute 'init'
@@ -955,8 +1042,8 @@ class CrowdsaleTests(unittest.TestCase):
                 buyer_acc
             ).error)
 
-    def test_10(self):
-        cprint('10. Check changing finish date', 'green')
+    def test_11(self):
+        cprint('11. Check changing finish date', 'green')
 
         # execute 'init'
         assert (not self.crowdsale_contract.push_action(
@@ -1015,8 +1102,8 @@ class CrowdsaleTests(unittest.TestCase):
             forceUnique=1
         ).error)
 
-    def test_11(self):
-        cprint('11. Check changing start date', 'green')
+    def test_12(self):
+        cprint('12. Check changing start date', 'green')
 
         # execute 'init'
         assert (not self.crowdsale_contract.push_action(
