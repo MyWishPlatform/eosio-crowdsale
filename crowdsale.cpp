@@ -60,13 +60,13 @@ void crowdsale::on_deposit(account_name investor, eosio::asset quantity) {
 	}
 
 	if (it == this->deposits.end()) {
-		this->deposits.emplace(investor, [investor, entire_eoses, entire_tokens](auto& deposit) {
+		this->deposits.emplace(this->_self, [investor, entire_eoses, entire_tokens](auto& deposit) {
 			deposit.account = investor;
 			deposit.eoses = entire_eoses;
 			deposit.tokens = entire_tokens;
 		});
 	} else {
-		this->deposits.modify(it, investor, [investor, entire_eoses, entire_tokens](auto& deposit) {
+		this->deposits.modify(it, this->_self, [investor, entire_eoses, entire_tokens](auto& deposit) {
 			deposit.account = investor;
 			deposit.eoses = entire_eoses;
 			deposit.tokens = entire_tokens;
