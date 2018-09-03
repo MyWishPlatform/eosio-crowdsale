@@ -79,6 +79,7 @@ void crowdsale::on_deposit(account_name investor, eosio::asset quantity) {
 
 void crowdsale::init(time_t start, time_t finish) {
 	eosio_assert(!this->state_singleton.exists(), "Already initialized");
+	eosio_assert(start < finish, "Start must be less than finish");
 	require_auth(this->_self);
 
 	this->state.start = start;
