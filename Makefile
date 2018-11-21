@@ -7,7 +7,7 @@ all:
 	make -C eosiotoken
 	rm -rf $(NAME)
 	mkdir $(NAME)
-	cp *.abi $(NAME)
+	cp $(NAME).abi $(NAME)
 	eosiocpp -o $(NAME)/$(NAME).wast $(NAME).cpp
 
 clean:
