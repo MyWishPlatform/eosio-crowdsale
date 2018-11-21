@@ -10,6 +10,15 @@ import argparse
 
 
 class CrowdsaleTests(unittest.TestCase):
+
+
+    def ignore_warnings(test_func):
+        def do_test(self, *args, **kwargs):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", ResourceWarning)
+                test_func(self, *args, **kwargs)
+        return do_test
+
     @classmethod
     def setUpClass(cls):
         cls.cfg = {}
@@ -51,6 +60,7 @@ class CrowdsaleTests(unittest.TestCase):
         if not result.failures:
             super().run(result)
 
+    @ignore_warnings
     def setUp(self):
         empty_hash = "code hash: 0000000000000000000000000000000000000000000000000000000000000000"
         # start node
