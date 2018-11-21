@@ -1,3 +1,4 @@
+.PHONY: all clean test debug
 NAME=crowdsale
 
 all:
@@ -9,5 +10,11 @@ all:
 	cp *.abi $(NAME)
 	eosiocpp -o $(NAME)/$(NAME).wast $(NAME).cpp
 
+clean:
+	rm -rf build
+
 test:
 	python3 unittest_crowdsale.py
+
+debug:
+	python3 unittest_crowdsale.py --verbose
