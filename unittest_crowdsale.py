@@ -7,7 +7,6 @@ import re
 from decimal import Decimal
 from math import ceil
 
-verbosity([Verbosity.INFO, Verbosity.OUT, Verbosity.TRACE, Verbosity.DEBUG])
 
 class CrowdsaleTests(unittest.TestCase):
     @classmethod
@@ -1185,4 +1184,13 @@ class CrowdsaleTests(unittest.TestCase):
             )
 
 if __name__ == "__main__":
+    verbosity([])  # disable logs
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--verbose", help="increase output verbosity",
+                        action="store_true")
+    args = parser.parse_args()
+    if args.verbose:
+        verbosity([Verbosity.INFO, Verbosity.OUT, Verbosity.TRACE, Verbosity.DEBUG])
+        print("verbosity turned on")
     unittest.main()
