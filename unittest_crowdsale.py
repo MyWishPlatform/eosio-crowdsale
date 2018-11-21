@@ -7,6 +7,7 @@ import re
 from decimal import Decimal
 from math import ceil
 import argparse
+import warnings
 
 
 class CrowdsaleTests(unittest.TestCase):
@@ -359,7 +360,7 @@ class CrowdsaleTests(unittest.TestCase):
             }),
             self.system_token_deployer_acc
         )
-        print(self.system_token_contract.table("accounts", buyer_acc))
+        #print(self.system_token_contract.table("accounts", buyer_acc))
         assert (eos_to_issue == self.fromAsset(self.system_token_contract.table("accounts", buyer_acc)
                                                .json["rows"][0]["balance"])["amount"])
 
