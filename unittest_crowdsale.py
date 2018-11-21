@@ -6,6 +6,7 @@ import unittest
 import re
 from decimal import Decimal
 from math import ceil
+import argparse
 
 
 class CrowdsaleTests(unittest.TestCase):
@@ -56,13 +57,11 @@ class CrowdsaleTests(unittest.TestCase):
         reset()
 
         # create wallet
-        #verbosity([])  # disable logs
         create_wallet()
 
         # create eosio account
         create_master_account("master")
         self.eosio_acc = master
-        verbosity([Verbosity.INFO, Verbosity.OUT, Verbosity.TRACE, Verbosity.DEBUG]) # enable logs
         # create issuer account
         create_account("issuer_acc", master, self.issuer_acc_name)
         self.issuer_acc = issuer_acc
@@ -199,14 +198,14 @@ class CrowdsaleTests(unittest.TestCase):
 
     def reach_cap(self, cap_tkn_cent, buyer_acc):
         contributed = 0
-        print(cap_tkn_cent)
+        #print(cap_tkn_cent)
         eos_to_transfer = cap_tkn_cent / 10 ** self.decimals / self.rate
         if self.max_contrib_eos > 0:
             eos_to_transfer = self.max_contrib_eos
             times = int(cap_tkn_cent / 10 ** self.decimals / self.rate / eos_to_transfer)
 
-            print(eos_to_transfer)
-            print(times)
+            #print(eos_to_transfer)
+            #print(times)
             for x in range(times):
                 self.system_token_contract.push_action(
                     "transfer",
