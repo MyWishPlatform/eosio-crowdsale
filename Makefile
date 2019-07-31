@@ -10,6 +10,13 @@ all:
 	cp *.abi $(NAME)
 	eosiocpp -o $(NAME)/$(NAME).wast $(NAME).cpp
 
+build:
+	make -C eosiotoken
+	rm -rf $(NAME)
+	mkdir $(NAME)
+	cp *.abi $(NAME)
+	eosiocpp -o $(NAME)/$(NAME).wast $(NAME).cpp
+
 clean:
 	rm -rf build
 
